@@ -1,7 +1,7 @@
 ---
 import Layout from "../../../components/Layout.astro";
 import WeekGrid from "../../../components/WeekGrid.astro";
-import { getCourses, meetingsFor, searchCourses } from "../../../lib/catalogue";
+import { getCourses, meetingsFor } from "../../../lib/catalogue";
 import { courseCode, generate, toSelection } from "../../../lib/generate";
 import { clampPage, emptyMessage } from "../../../lib/plan-view";
 import { getPlan, listSaved, PLAN_COOKIE, planCookieOptions, planCourseIds } from "../../../lib/plans";
@@ -14,8 +14,6 @@ Astro.cookies.set(PLAN_COOKIE, plan.id, planCookieOptions);
 const ids = planCourseIds(plan.id);
 const added = getCourses(ids);
 const colours = new Map(ids.map((id, i) => [id, i % 8]));
-const q = Astro.url.searchParams.get("q")?.trim() ?? "";
-const results = searchCourses(q);
 const result = generate(meetingsFor(ids));
 const total = result.schedules.length;
 const n = clampPage(Astro.url.searchParams.get("n"), total);
@@ -23,12 +21,7 @@ const schedule = result.schedules[n - 1];
 const saved = listSaved(plan.id);
 const coursesAction = `/api/plans/${plan.id}/courses`;
 
-const pageLink = (k: number) => {
-  const params = new URLSearchParams();
-  if (q) params.set("q", q);
-  params.set("n", String(k));
-  return `?${params}`;
-};
+const pageLink = (k: number) => `?n=${k}`;
 const savedCodes = (selection: { courseId: string }[]) =>
   [...new Set(selection.map((s) => courseCode(s.courseId)))].join(", ");
 ---
@@ -60,7 +53,6 @@ const savedCodes = (selection: { courseId: string }[]) =>
                     <form method="post" action={coursesAction}>
                       <input type="hidden" name="courseId" value={c.id} />
                       <input type="hidden" name="action" value="remove" />
-                      <input type="hidden" name="q" value={q} />
                       <button class="ghost" aria-label={`Remove ${c.code}`}>×</button>
                     </form>
                   </li>
@@ -74,39 +66,16 @@ const savedCodes = (selection: { courseId: string }[]) =>
       <section class="card" aria-labelledby="add-heading">
         <h2 id="add-heading" class="card-title">Add a course</h2>
         <div class="card-body">
-          <form method="get" role="search" class="search">
-            <label for="q">Search Semester 2 by code or title</label>
+          <form method="get" action={`/plan/${plan.id}/search`} role="search" class="search">
+            <label for="q">Code, title or subject</label>
             <div class="row">
-              <input id="q" name="q" value={q} placeholder="COMP1110 or programming" />
+              <input id="q" name="q" placeholder="COMP, COMP2100, computing…" />
               <button class="secondary">Search</button>
             </div>
           </form>
-          {
-            q &&
-              (results.length === 0 ? (
-                <p class="hint">No Semester 2 courses match “{q}”.</p>
-              ) : (
-                <ul class="results">
-                  {results.map((c) => (
-                    <li>
-                      <span>
-                        <strong>{c.code}</strong> {c.title}
-                      </span>
-                      {ids.includes(c.id) ? (
-                        <span class="added">Added</span>
-                      ) : (
-                        <form method="post" action={coursesAction}>
-                          <input type="hidden" name="courseId" value={c.id} />
-                          <input type="hidden" name="action" value="add" />
-                          <input type="hidden" name="q" value={q} />
-                          <button class="small" aria-label={`Add ${c.code}`}>Add</button>
-                        </form>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              ))
-          }
+          <p class="browse">
+            <a class="btn" href={`/plan/${plan.id}/search`}>Browse by subject and level →</a>
+          </p>
         </div>
       </section>
     </aside>

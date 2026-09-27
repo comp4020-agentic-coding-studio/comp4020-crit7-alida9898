@@ -1,12 +1,12 @@
 ---
 // Every page's shell: the invariants in spec/ want a language, a viewport,
 // a real title, a nav landmark and exactly one h1 (the page supplies the h1).
-// Plan pages pass `plan` to get the Schedules / Saved tab bar.
+// Plan pages pass `plan` to get the Schedules / Search / Saved tab bar.
 import "../styles.css";
 
 interface Props {
   title: string;
-  plan?: { id: string; savedCount: number; tab: "schedules" | "saved" };
+  plan?: { id: string; savedCount: number; tab: "schedules" | "search" | "saved" };
 }
 
 const { title, plan } = Astro.props;
@@ -33,6 +33,9 @@ const { title, plan } = Astro.props;
         <nav aria-label="plan" class="tabs">
           <a href={`/plan/${plan.id}`} aria-current={plan.tab === "schedules" ? "page" : undefined}>
             Schedules
+          </a>
+          <a href={`/plan/${plan.id}/search`} aria-current={plan.tab === "search" ? "page" : undefined}>
+            Search courses
           </a>
           <a href={`/plan/${plan.id}#saved`} aria-current={plan.tab === "saved" ? "page" : undefined}>
             Saved ({plan.savedCount})

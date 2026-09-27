@@ -1,11 +1,12 @@
-import { asc, eq, inArray, like, or } from "drizzle-orm";
+import { asc, eq, inArray } from "drizzle-orm";
+import subjectNames from "../../data/subjects-2026.json";
+import { type Subject, subjectOf } from "./course-search";
 import { db } from "./db";
 import type { Meeting, Selection } from "./generate";
 import { courses, meetings } from "./schema";
 
 export type Course = typeof courses.$inferSelect;
 
-const SEARCH_LIMIT = 20;
 const meetingColumns = {
   courseId: meetings.courseId,
   activity: meetings.activity,
@@ -17,18 +18,19 @@ const meetingColumns = {
   location: meetings.location,
 };
 
-// Code or title substring; SQLite's LIKE is case-insensitive for ASCII.
-export function searchCourses(q: string): Course[] {
-  const term = q.trim();
-  if (term.length < 2) return [];
-  const pattern = `%${term}%`;
-  return db
-    .select()
-    .from(courses)
-    .where(or(like(courses.code, pattern), like(courses.title, pattern)))
-    .orderBy(asc(courses.code))
-    .limit(SEARCH_LIMIT)
-    .all();
+export function allCourses(): Course[] {
+  return db.select().from(courses).orderBy(asc(courses.code)).all();
+}
+
+// Every subject with courses this term; names come from Programs and Courses
+// (scripts/fetch-subjects.ts), falling back to the code.
+export function allSubjects(list: Course[] = allCourses()): Subject[] {
+  const names = subjectNames as Record<string, { name: string; school: string }>;
+  const counts = new Map<string, number>();
+  for (const c of list) counts.set(subjectOf(c.code), (counts.get(subjectOf(c.code)) ?? 0) + 1);
+  return [...counts]
+    .map(([code, count]) => ({ code, count, name: names[code]?.name ?? code, school: names[code]?.school ?? "" }))
+    .sort((a, b) => a.code.localeCompare(b.code));
 }
 
 export function getCourses(ids: string[]): Course[] {

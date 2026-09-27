@@ -81,9 +81,14 @@ describe("schedule builder pages", () => {
     expect(doc.body.textContent).toContain("Add a course to see schedules.");
   });
 
-  it("finds a course by code", async () => {
-    const { doc } = await page(`${planPath}?q=COMP1110`);
+  it("finds a course by code on the search page", async () => {
+    const { doc } = await page(`${planPath}/search?q=COMP1110`);
     expect(doc.querySelector('button[aria-label="Add COMP1110"]')).toBeTruthy();
+  });
+
+  it("links the planner to the course search", async () => {
+    const { doc } = await page(planPath);
+    expect(doc.querySelector(`a[href="${planPath}/search"]`)).toBeTruthy();
   });
 
   it("generates clash-free schedules once courses are added", async () => {
@@ -133,5 +138,69 @@ describe("copy", () => {
   it("keeps the spaces around inline links", async () => {
     const { doc } = await page("/");
     expect(doc.querySelector("footer")?.textContent?.replace(/\s+/g, " ")).toContain("ANU CSSA timetable scrape");
+  });
+});
+
+describe("course search", () => {
+  let planPath = "";
+  const search = (params: string) => page(`${planPath}/search${params}`);
+  const addButtons = (doc: Document) =>
+    [...doc.querySelectorAll("button[aria-label^='Add ']")].map((b) => b.getAttribute("aria-label"));
+
+  it("opens on a directory of subjects by code and name", async () => {
+    const res = await post("/api/plans", {});
+    planPath = res.headers.get("location") ?? "";
+    const { status, doc } = await search("");
+    expect(status).toBe(200);
+    const comp = doc.querySelector('a[href$="/search?subject=COMP"]');
+    expect(comp?.textContent).toContain("Computer Science");
+  });
+
+  it("lists every course in a subject", async () => {
+    const { doc } = await search("?subject=COMP");
+    const adds = addButtons(doc);
+    expect(adds).toContain("Add COMP1110");
+    expect(adds).toContain("Add COMP2100");
+    expect(adds.every((a) => a?.startsWith("Add COMP"))).toBe(true);
+  });
+
+  it("narrows a subject to one level", async () => {
+    const { doc } = await search("?subject=COMP&level=2000");
+    const adds = addButtons(doc);
+    expect(adds).toContain("Add COMP2100");
+    expect(adds).not.toContain("Add COMP1110");
+    expect(doc.querySelector('a[aria-current="true"]')?.textContent).toContain("2000");
+  });
+
+  it("understands a subject named in words", async () => {
+    const { doc } = await search("?q=computing");
+    expect(addButtons(doc)).toContain("Add COMP1110");
+  });
+
+  it("says so when nothing matches", async () => {
+    const { doc } = await search("?q=zzzzqqq");
+    expect(doc.body.textContent).toContain("No Semester 2 courses match");
+  });
+
+  it("adds a course and comes back to the same search", async () => {
+    const back = `${planPath}/search?subject=COMP&level=2000`;
+    const res = await post(api(planPath, "courses"), { courseId: "COMP2100_S2", action: "add", back });
+    expect(res.status).toBe(303);
+    expect(res.headers.get("location")).toBe(back);
+    const { doc } = await page(back);
+    expect(addButtons(doc)).not.toContain("Add COMP2100");
+  });
+
+  it("won't redirect anywhere but this plan", async () => {
+    const res = await post(api(planPath, "courses"), {
+      courseId: "COMP1110_S2",
+      action: "add",
+      back: "https://example.com/phish",
+    });
+    expect(res.headers.get("location")).toBe(planPath);
+  });
+
+  it("404s the search page of an unknown plan", async () => {
+    expect((await page("/plan/does-not-exist-000/search")).status).toBe(404);
   });
 });

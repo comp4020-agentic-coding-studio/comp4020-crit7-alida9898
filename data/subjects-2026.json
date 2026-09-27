@@ -1,0 +1,358 @@
+{
+  "AATD": {
+    "name": "ANU (Graduate) Attribute Transdisciplinary",
+    "school": "ANU College of Arts and Social Sciences"
+  },
+  "ACST": {
+    "name": "Actuarial Studies",
+    "school": "Rsch Sch of Finance, Actuarial Studies & App Stats"
+  },
+  "ANTH": {
+    "name": "Anthropology",
+    "school": "School of Archaeology and Anthropology"
+  },
+  "ARAB": {
+    "name": "Arabic",
+    "school": "Centre for Arab and Islamic Studies"
+  },
+  "ARCH": {
+    "name": "Archaeology",
+    "school": "School of Archaeology and Anthropology"
+  },
+  "ARTH": {
+    "name": "Art History",
+    "school": "School of Art and Design"
+  },
+  "ARTV": {
+    "name": "Visual Arts",
+    "school": "School of Art and Design"
+  },
+  "ASIA": {
+    "name": "Asian Studies",
+    "school": "School of Culture History and Language"
+  },
+  "ASTR": {
+    "name": "Astronomy and Astrophysics",
+    "school": "Research School of Astronomy and Astrophysics"
+  },
+  "BIAN": {
+    "name": "Biological Anthropology",
+    "school": "School of Archaeology and Anthropology"
+  },
+  "BIOL": {
+    "name": "Biology",
+    "school": "Biology Teaching and Learning Centre"
+  },
+  "BPHB": {
+    "name": "Adv Studies in the Social Sciences and Humanities",
+    "school": "ANU College of Asia and the Pacific"
+  },
+  "BURM": {
+    "name": "Burmese",
+    "school": "School of Culture History and Language"
+  },
+  "BUSI": {
+    "name": "Business",
+    "school": "Research School of Management"
+  },
+  "BUSN": {
+    "name": "Business",
+    "school": "Research School of Accounting"
+  },
+  "CBEA": {
+    "name": "College of Business and Economics Administration",
+    "school": "ANU College of Business and Economics"
+  },
+  "CHEM": {
+    "name": "Chemistry",
+    "school": "Research School of Chemistry"
+  },
+  "CHIN": {
+    "name": "Chinese",
+    "school": "School of Culture History and Language"
+  },
+  "CHMD": {
+    "name": "Culture, Health and Medicine",
+    "school": "School of Medicine and Psychology"
+  },
+  "CHST": {
+    "name": "Chinese Studies in Language",
+    "school": "School of Culture History and Language"
+  },
+  "CLAS": {
+    "name": "Classics",
+    "school": "School of Literature, Languages and Linguistics"
+  },
+  "COMP": {
+    "name": "Computer Science",
+    "school": "School of Computing"
+  },
+  "CRIM": {
+    "name": "Criminology",
+    "school": "POLIS: The Centre for Social Policy Research"
+  },
+  "DEMO": {
+    "name": "Demography",
+    "school": "School of Demography"
+  },
+  "DESN": {
+    "name": "Design",
+    "school": "School of Art and Design"
+  },
+  "DIPL": {
+    "name": "Diplomacy",
+    "school": "Department of International Relations"
+  },
+  "ECHI": {
+    "name": "Economic History",
+    "school": "Research School of Economics"
+  },
+  "ECON": {
+    "name": "Economics",
+    "school": "Research School of Economics"
+  },
+  "EMDV": {
+    "name": "Environmental Management & Development",
+    "school": "Crawford School of Public Policy"
+  },
+  "EMET": {
+    "name": "Econometrics",
+    "school": "Research School of Economics"
+  },
+  "EMSC": {
+    "name": "Earth and Marine Science",
+    "school": "Research School of Earth Sciences"
+  },
+  "ENGL": {
+    "name": "English",
+    "school": "School of Literature, Languages and Linguistics"
+  },
+  "ENGN": {
+    "name": "Engineering",
+    "school": "School of Engineering"
+  },
+  "ENVS": {
+    "name": "Environmental Science",
+    "school": "Fenner School of Environment and Society"
+  },
+  "FINM": {
+    "name": "Financial Management",
+    "school": "Rsch Sch of Finance, Actuarial Studies & App Stats"
+  },
+  "FREN": {
+    "name": "French",
+    "school": "School of Literature, Languages and Linguistics"
+  },
+  "GEND": {
+    "name": "Gender Studies",
+    "school": "School of Literature, Languages and Linguistics"
+  },
+  "GERM": {
+    "name": "German",
+    "school": "School of Literature, Languages and Linguistics"
+  },
+  "GREK": {
+    "name": "Greek",
+    "school": "School of Literature, Languages and Linguistics"
+  },
+  "HCAI": {
+    "name": "Humanities and Creative Arts Integration",
+    "school": "School of Art and Design and the School of Music"
+  },
+  "HIND": {
+    "name": "Hindi",
+    "school": "School of Culture History and Language"
+  },
+  "HIST": {
+    "name": "History",
+    "school": "School of History"
+  },
+  "HLTH": {
+    "name": "Health Science",
+    "school": "School of Medicine and Psychology"
+  },
+  "HUMN": {
+    "name": "Humanities",
+    "school": "Research School of Humanities and the Arts"
+  },
+  "IDEC": {
+    "name": "International and Developmental Economics",
+    "school": "Crawford School of Public Policy"
+  },
+  "INDG": {
+    "name": "Indigenous Studies",
+    "school": "School of History"
+  },
+  "INDN": {
+    "name": "Indonesian",
+    "school": "School of Culture History and Language"
+  },
+  "INFS": {
+    "name": "Information Systems",
+    "school": "Research School of Management"
+  },
+  "INTR": {
+    "name": "International Relations",
+    "school": "Department of International Relations"
+  },
+  "ITAL": {
+    "name": "Italian",
+    "school": "School of Literature, Languages and Linguistics"
+  },
+  "JPNS": {
+    "name": "Japanese",
+    "school": "School of Culture History and Language"
+  },
+  "KORE": {
+    "name": "Korean",
+    "school": "School of Culture History and Language"
+  },
+  "LATN": {
+    "name": "Latin",
+    "school": "School of Literature, Languages and Linguistics"
+  },
+  "LAWS": {
+    "name": "Laws",
+    "school": "ANU Law School"
+  },
+  "LING": {
+    "name": "Linguistics",
+    "school": "School of Culture History and Language"
+  },
+  "MATH": {
+    "name": "Mathematics",
+    "school": "Mathematical Sciences Institute"
+  },
+  "MEAS": {
+    "name": "Middle Eastern & Central Asian Studies",
+    "school": "Centre for Arab and Islamic Studies"
+  },
+  "MEDI": {
+    "name": "Medicine",
+    "school": "School of Medicine and Psychology"
+  },
+  "MEDN": {
+    "name": "Medical Science",
+    "school": "School of Medicine and Psychology"
+  },
+  "MGMT": {
+    "name": "Management",
+    "school": "Research School of Management"
+  },
+  "MKTG": {
+    "name": "Marketing",
+    "school": "Research School of Management"
+  },
+  "MUSI": {
+    "name": "Music",
+    "school": "School of Music"
+  },
+  "NEUR": {
+    "name": "Neuroscience",
+    "school": "John Curtin School of Medical Research"
+  },
+  "NSPO": {
+    "name": "National Security Policy",
+    "school": "ANU National Security College"
+  },
+  "PASI": {
+    "name": "Pacific Studies",
+    "school": "School of Culture History and Language"
+  },
+  "PERS": {
+    "name": "Persian",
+    "school": "Centre for Arab and Islamic Studies"
+  },
+  "PHIL": {
+    "name": "Philosophy",
+    "school": "School of Philosophy"
+  },
+  "PHYS": {
+    "name": "Physics",
+    "school": "Research School of Physics"
+  },
+  "PNPI": {
+    "name": "Philosophy, Neuroscience & Psychology Integrative",
+    "school": "John Curtin School of Medical Research"
+  },
+  "POGO": {
+    "name": "Policy and Governance",
+    "school": "Crawford School of Public Policy"
+  },
+  "POLS": {
+    "name": "Political Science",
+    "school": "School of Politics and International Relations"
+  },
+  "POPH": {
+    "name": "Population Health",
+    "school": "National Centre Epidemiology & Population Health"
+  },
+  "PPEI": {
+    "name": "Politics, Philosophy and Economics",
+    "school": "School of Politics and International Relations"
+  },
+  "PSYC": {
+    "name": "Psychology",
+    "school": "School of Medicine and Psychology"
+  },
+  "REGN": {
+    "name": "RegNet",
+    "school": "School of Regulation and Global Governance"
+  },
+  "RUSS": {
+    "name": "Russian",
+    "school": "School of Literature, Languages and Linguistics"
+  },
+  "SCNC": {
+    "name": "Faculty of Science",
+    "school": "ANU College of Science and Medicine"
+  },
+  "SCOM": {
+    "name": "Science Communication",
+    "school": "Centre for the Public Awareness of Science"
+  },
+  "SCRN": {
+    "name": "Screen Studies",
+    "school": "School of Literature, Languages and Linguistics"
+  },
+  "SOCR": {
+    "name": "Social Research",
+    "school": "POLIS: The Centre for Social Policy Research"
+  },
+  "SOCS": {
+    "name": "Social Sciences",
+    "school": "POLIS: The Centre for Social Policy Research"
+  },
+  "SOCY": {
+    "name": "Sociology",
+    "school": "School of Sociology"
+  },
+  "SPAN": {
+    "name": "Spanish",
+    "school": "School of Literature, Languages and Linguistics"
+  },
+  "STAT": {
+    "name": "Statistics",
+    "school": "Rsch Sch of Finance, Actuarial Studies & App Stats"
+  },
+  "STST": {
+    "name": "Strategic Studies",
+    "school": "Strategic and Defence Studies Centre"
+  },
+  "THAI": {
+    "name": "Thai",
+    "school": "School of Culture History and Language"
+  },
+  "TOKP": {
+    "name": "Tok Pisin",
+    "school": "School of Culture History and Language"
+  },
+  "VIET": {
+    "name": "Vietnamese",
+    "school": "School of Culture History and Language"
+  },
+  "WILC": {
+    "name": "Work Integrated Learning Course",
+    "school": "ANU College of Business and Economics"
+  }
+}
