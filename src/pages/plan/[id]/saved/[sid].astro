@@ -3,7 +3,7 @@ import Layout from "../../../../components/Layout.astro";
 import WeekGrid from "../../../../components/WeekGrid.astro";
 import { meetingsForSelection } from "../../../../lib/catalogue";
 import { courseCode, groupOptions } from "../../../../lib/generate";
-import { getPlan, getSaved } from "../../../../lib/plans";
+import { getPlan, getSaved, listSaved } from "../../../../lib/plans";
 
 const plan = getPlan(Astro.params.id ?? "");
 const saved = plan && getSaved(plan.id, Number(Astro.params.sid));
@@ -13,18 +13,28 @@ if (!plan || !saved) return Astro.rewrite("/404");
 const schedule = groupOptions(meetingsForSelection(saved.selection)).flat();
 const courseIds = [...new Set(saved.selection.map((s) => s.courseId))];
 const colours = new Map(courseIds.map((id, i) => [id, i % 8]));
+const savedCount = listSaved(plan.id).length;
 ---
 
-<Layout title="Saved schedule — ANU Schedule Builder">
-  <h1>Saved schedule</h1>
-  <p>
-    {courseIds.map(courseCode).join(", ")} · saved {saved.createdAt} UTC ·{" "}
-    <a href={`/plan/${plan.id}`}>Back to your plan</a>
-  </p>
-  {
-    schedule.length < saved.selection.length && (
-      <p class="hint">Some classes in this schedule are no longer in the timetable.</p>
-    )
-  }
-  <WeekGrid schedule={schedule} colours={colours} />
+<Layout
+  title="Saved schedule — ANU Schedule Builder"
+  plan={{ id: plan.id, savedCount, tab: "saved" }}
+>
+  <div class="page-head">
+    <h1>Saved schedule</h1>
+    <p class="hint">
+      {courseIds.map(courseCode).join(", ")} · saved {saved.createdAt} UTC ·{" "}
+      <a href={`/plan/${plan.id}`}>Back to your plan</a>
+    </p>
+  </div>
+  <section class="card" aria-label="Saved schedule">
+    <div class="card-body">
+      {
+        schedule.length < saved.selection.length && (
+          <p class="hint">Some classes in this schedule are no longer in the timetable.</p>
+        )
+      }
+      <WeekGrid schedule={schedule} colours={colours} />
+    </div>
+  </section>
 </Layout>

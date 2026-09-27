@@ -16,25 +16,40 @@ const schedule = result.schedules[n - 1];
 ---
 
 <Layout title="Example — ANU Schedule Builder">
-  <h1>Example: COMP1110 + COMP2100</h1>
-  <form method="post" action="/api/plans">
-    <button>Start your own plan</button>
-  </form>
-  {
-    schedule ? (
-      <>
-        <h2>
-          Schedule {n} of {total}
-          {result.capped && "+"}
-        </h2>
-        <nav aria-label="schedules" class="pager">
-          {n > 1 ? <a href={`?n=${n - 1}`}>← Previous</a> : <span>← Previous</span>}
-          {n < total ? <a href={`?n=${n + 1}`}>Next →</a> : <span>Next →</span>}
-        </nav>
-        <WeekGrid schedule={schedule} colours={colours} />
-      </>
-    ) : (
-      <p>{emptyMessage(ids.length, result)}</p>
-    )
-  }
+  <div class="page-head">
+    <h1>Example: COMP1110 + COMP2100</h1>
+    <p class="hint">A read-only plan. Start your own to add courses and save schedules.</p>
+  </div>
+  <section class="card schedule" aria-label="Example schedules">
+    {
+      schedule ? (
+        <>
+          <div class="sched-head">
+            <div>
+              <h2>
+                Schedule {n} <span class="of">of {total}{result.capped && "+"}</span>
+              </h2>
+              <p class="hint">Every combination shown is clash-free.</p>
+            </div>
+            <div class="toolbar">
+              <nav aria-label="schedules" class="pager">
+                {n > 1 ? <a class="btn" href={`?n=${n - 1}`}>‹ Previous</a> : <span class="btn disabled">‹ Previous</span>}
+                {n < total ? <a class="btn" href={`?n=${n + 1}`}>Next ›</a> : <span class="btn disabled">Next ›</span>}
+              </nav>
+              <form method="post" action="/api/plans">
+                <button class="primary">Start your own plan</button>
+              </form>
+            </div>
+          </div>
+          <div class="card-body">
+            <WeekGrid schedule={schedule} colours={colours} />
+          </div>
+        </>
+      ) : (
+        <div class="card-body">
+          <p class="empty">{emptyMessage(ids.length, result)}</p>
+        </div>
+      )
+    }
+  </section>
 </Layout>

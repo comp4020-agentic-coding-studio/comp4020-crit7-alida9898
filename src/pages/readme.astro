@@ -12,5 +12,7 @@ const html = (await readme.compiledContent()).replace(/(src|href)="public\//g, '
 ---
 
 <Layout title={title}>
-  <Fragment set:html={html} />
+  <article class="card prose">
+    <div class="card-body" set:html={html} />
+  </article>
 </Layout>

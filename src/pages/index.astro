@@ -7,16 +7,37 @@ const existing = remembered ? getPlan(remembered) : undefined;
 ---
 
 <Layout title="ANU Schedule Builder">
-  <h1>ANU Schedule Builder</h1>
-  <p>
-    Add your Semester 2 2026 courses and see every clash-free timetable, one week at a time —
-    no more trying tutorials one by one. Save the ones you like.
-  </p>
-  {existing && <p><a href={`/plan/${existing.id}`} class="button">Continue your plan</a></p>}
-  <form method="post" action="/api/plans">
-    <button>{existing ? "Start a new plan" : "Start a plan"}</button>
-  </form>
-  <p><a href="/example/">See an example</a> with COMP1110 and COMP2100.</p>
+  <section class="card hero">
+    <div class="card-body">
+      <h1>Every clash-free timetable, one week at a time</h1>
+      <p class="lede">
+        Add your Semester 2 2026 courses and see every combination of lectures, tutorials and labs
+        that fits — no more trying tutorials one by one. Save the ones you like.
+      </p>
+      <div class="actions">
+        {existing && <a href={`/plan/${existing.id}`} class="btn primary">Continue your plan</a>}
+        <form method="post" action="/api/plans">
+          <button class={existing ? "secondary" : "primary"}>
+            {existing ? "Start a new plan" : "Start a plan"}
+          </button>
+        </form>
+        <a href="/example/" class="btn">See an example</a>
+      </div>
+    </div>
+  </section>
+  <ol class="steps">
+    <li class="card">
+      <div class="card-body"><strong>1. Add courses</strong><p class="hint">Search by code or title.</p></div>
+    </li>
+    <li class="card">
+      <div class="card-body">
+        <strong>2. Page through schedules</strong><p class="hint">Each one clash-free, drawn as a week.</p>
+      </div>
+    </li>
+    <li class="card">
+      <div class="card-body"><strong>3. Save the ones you like</strong><p class="hint">They stay with your plan.</p></div>
+    </li>
+  </ol>
   <p class="hint">
     There's no login: your plan lives at its own link, so bookmark it to come back from another
     device. Anyone with that link can see and change it.

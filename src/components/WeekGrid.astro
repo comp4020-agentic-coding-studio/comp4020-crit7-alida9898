@@ -29,20 +29,26 @@ for (let m = layout.startMin; m < layout.endMin; m += 60) hours.push(m);
     {
       layout.days.map((day) => (
         <section class="day" aria-labelledby={`day-${day}`}>
-          <h3 id={`day-${day}`}>{DAY_NAMES[day]}</h3>
+          <h3 id={`day-${day}`}>
+            <span class="long">{DAY_NAMES[day]}</span>
+            <span class="short" aria-hidden="true">{DAY_NAMES[day].slice(0, 3)}</span>
+          </h3>
           <ol class="slots">
             {layout.blocks
               .filter((b) => b.day === day)
               .map((b) => (
                 <li
                   class={`block c${colours.get(b.courseId) ?? 0}`}
+                  title={`${courseCode(b.courseId)} ${b.activity}/${b.occurrence}, ${clock(b.startMin)}–${clock(b.finishMin)}${b.location ? `, ${b.location}` : ""}`}
                   style={`top:${pct(b.startMin)};height:${(b.finishMin - b.startMin) / span * 100}%;left:${(b.lane / b.lanes) * 100}%;width:${100 / b.lanes}%`}
                 >
-                  <strong>{courseCode(b.courseId)}</strong> {b.activity}/{b.occurrence}
+                  <span>
+                    <strong>{courseCode(b.courseId)}</strong> {b.activity}/{b.occurrence}
+                  </span>
                   <span>
                     {clock(b.startMin)}–{clock(b.finishMin)}
                   </span>
-                  {b.location && <span>{b.location}</span>}
+                  {b.location && <span class="loc">{b.location}</span>}
                 </li>
               ))}
           </ol>
@@ -54,13 +60,16 @@ for (let m = layout.startMin; m < layout.endMin; m += 60) hours.push(m);
 {
   layout.oneOffs.length > 0 && (
     <>
-      <h3>One-off sessions</h3>
+      <h3 class="sub">One-off sessions</h3>
       <ul class="one-offs">
         {layout.oneOffs.map((m) => (
           <li>
-            <strong>{courseCode(m.courseId)}</strong> {m.activity}/{m.occurrence} — {DAY_NAMES[m.day]}{" "}
-            {clock(m.startMin)}–{clock(m.finishMin)}, calendar week {m.weekList.join(" & ")}
-            {m.location && `, ${m.location}`}
+            <span class={`dot c${colours.get(m.courseId) ?? 0}`} aria-hidden="true" />
+            <span>
+              <strong>{courseCode(m.courseId)}</strong> {m.activity}/{m.occurrence} — {DAY_NAMES[m.day]}{" "}
+              {clock(m.startMin)}–{clock(m.finishMin)}, calendar week {m.weekList.join(" & ")}
+              {m.location && `, ${m.location}`}
+            </span>
           </li>
         ))}
       </ul>

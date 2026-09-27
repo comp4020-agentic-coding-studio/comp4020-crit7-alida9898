@@ -33,109 +33,153 @@ const savedCodes = (selection: { courseId: string }[]) =>
   [...new Set(selection.map((s) => courseCode(s.courseId)))].join(", ");
 ---
 
-<Layout title="Your plan — ANU Schedule Builder">
-  <h1>Your plan</h1>
-  <p class="hint">This page's link is your plan — bookmark it to come back from anywhere.</p>
+<Layout
+  title="Your plan — ANU Schedule Builder"
+  plan={{ id: plan.id, savedCount: saved.length, tab: "schedules" }}
+>
+  <div class="page-head">
+    <h1>Your plan</h1>
+    <p class="hint">This page's link is your plan — bookmark it to come back from anywhere.</p>
+  </div>
   <div class="planner">
-    <aside aria-labelledby="courses-heading">
-      <h2 id="courses-heading">Courses</h2>
-      {
-        added.length === 0 ? (
-          <p>No courses yet — search below.</p>
-        ) : (
-          <ul class="course-list">
-            {added.map((c) => (
-              <li class={`c${colours.get(c.id)}`}>
-                <span>
-                  <strong>{c.code}</strong> {c.title}
-                </span>
-                <form method="post" action={coursesAction}>
-                  <input type="hidden" name="courseId" value={c.id} />
-                  <input type="hidden" name="action" value="remove" />
-                  <input type="hidden" name="q" value={q} />
-                  <button aria-label={`Remove ${c.code}`}>Remove</button>
-                </form>
-              </li>
-            ))}
-          </ul>
-        )
-      }
-      <form method="get" role="search" class="search">
-        <label for="q">Find a Semester 2 course</label>
-        <input id="q" name="q" value={q} placeholder="COMP1110 or programming" />
-        <button>Search</button>
-      </form>
-      {
-        q &&
-          (results.length === 0 ? (
-            <p>No Semester 2 courses match “{q}”.</p>
-          ) : (
-            <ul class="results">
-              {results.map((c) => (
-                <li>
-                  <span>
-                    <strong>{c.code}</strong> {c.title}
-                  </span>
-                  {ids.includes(c.id) ? (
-                    <span class="added">Added</span>
-                  ) : (
+    <aside>
+      <section class="card" aria-labelledby="courses-heading">
+        <h2 id="courses-heading" class="card-title">Your courses</h2>
+        <div class="card-body">
+          {
+            added.length === 0 ? (
+              <p class="hint">No courses yet — search below.</p>
+            ) : (
+              <ul class="course-list">
+                {added.map((c) => (
+                  <li class={`c${colours.get(c.id)}`}>
+                    <span class="name">
+                      <strong>{c.code}</strong>
+                      <small>{c.title}</small>
+                    </span>
                     <form method="post" action={coursesAction}>
                       <input type="hidden" name="courseId" value={c.id} />
-                      <input type="hidden" name="action" value="add" />
+                      <input type="hidden" name="action" value="remove" />
                       <input type="hidden" name="q" value={q} />
-                      <button aria-label={`Add ${c.code}`}>Add</button>
+                      <button class="ghost" aria-label={`Remove ${c.code}`}>×</button>
                     </form>
-                  )}
-                </li>
-              ))}
-            </ul>
-          ))
-      }
+                  </li>
+                ))}
+              </ul>
+            )
+          }
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="add-heading">
+        <h2 id="add-heading" class="card-title">Add a course</h2>
+        <div class="card-body">
+          <form method="get" role="search" class="search">
+            <label for="q">Search Semester 2 by code or title</label>
+            <div class="row">
+              <input id="q" name="q" value={q} placeholder="COMP1110 or programming" />
+              <button class="secondary">Search</button>
+            </div>
+          </form>
+          {
+            q &&
+              (results.length === 0 ? (
+                <p class="hint">No Semester 2 courses match “{q}”.</p>
+              ) : (
+                <ul class="results">
+                  {results.map((c) => (
+                    <li>
+                      <span>
+                        <strong>{c.code}</strong> {c.title}
+                      </span>
+                      {ids.includes(c.id) ? (
+                        <span class="added">Added</span>
+                      ) : (
+                        <form method="post" action={coursesAction}>
+                          <input type="hidden" name="courseId" value={c.id} />
+                          <input type="hidden" name="action" value="add" />
+                          <input type="hidden" name="q" value={q} />
+                          <button class="small" aria-label={`Add ${c.code}`}>Add</button>
+                        </form>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ))
+          }
+        </div>
+      </section>
     </aside>
 
-    <section aria-labelledby="schedule-heading" class="schedule">
+    <section class="card schedule" aria-labelledby="schedule-heading">
       {
         schedule ? (
           <>
-            <h2 id="schedule-heading">
-              Schedule {n} of {total}
-              {result.capped && "+"}
-            </h2>
-            {result.capped && <p class="hint">Showing the first {total} combinations.</p>}
-            <nav aria-label="schedules" class="pager">
-              {n > 1 ? <a href={pageLink(n - 1)}>← Previous</a> : <span>← Previous</span>}
-              {n < total ? <a href={pageLink(n + 1)}>Next →</a> : <span>Next →</span>}
-            </nav>
-            <WeekGrid schedule={schedule} colours={colours} />
-            <form method="post" action={`/api/plans/${plan.id}/saved`}>
-              <input type="hidden" name="selection" value={JSON.stringify(toSelection(schedule))} />
-              <input type="hidden" name="n" value={String(n)} />
-              <button>Save this schedule</button>
-            </form>
+            <div class="sched-head">
+              <div>
+                <h2 id="schedule-heading">
+                  Schedule {n} <span class="of">of {total}{result.capped && "+"}</span>
+                </h2>
+                <p class="hint">
+                  Every combination shown is clash-free.
+                  {result.capped && ` Showing the first ${total}.`}
+                </p>
+              </div>
+              <div class="toolbar">
+                <nav aria-label="schedules" class="pager">
+                  {n > 1 ? (
+                    <a class="btn" href={pageLink(n - 1)}>‹ Previous</a>
+                  ) : (
+                    <span class="btn disabled">‹ Previous</span>
+                  )}
+                  {n < total ? (
+                    <a class="btn" href={pageLink(n + 1)}>Next ›</a>
+                  ) : (
+                    <span class="btn disabled">Next ›</span>
+                  )}
+                </nav>
+                <form method="post" action={`/api/plans/${plan.id}/saved`}>
+                  <input type="hidden" name="selection" value={JSON.stringify(toSelection(schedule))} />
+                  <input type="hidden" name="n" value={String(n)} />
+                  <button class="primary">Save schedule</button>
+                </form>
+              </div>
+            </div>
+            <div class="card-body">
+              <WeekGrid schedule={schedule} colours={colours} />
+            </div>
           </>
         ) : (
           <>
-            <h2 id="schedule-heading">Schedules</h2>
-            <p>{emptyMessage(ids.length, result)}</p>
+            <div class="sched-head">
+              <h2 id="schedule-heading">Schedules</h2>
+            </div>
+            <div class="card-body">
+              <p class="empty">{emptyMessage(ids.length, result)}</p>
+            </div>
           </>
         )
       }
 
-      <h2 id="saved">Saved schedules</h2>
-      {
-        saved.length === 0 ? (
-          <p>None yet.</p>
-        ) : (
-          <ol>
-            {saved.map((s, i) => (
-              <li>
-                <a href={`/plan/${plan.id}/saved/${s.id}`}>Saved schedule {i + 1}</a> —{" "}
-                {savedCodes(s.selection)}, saved {s.createdAt} UTC
-              </li>
-            ))}
-          </ol>
-        )
-      }
+      <div class="card-body saved-block">
+        <h2 id="saved" class="sub">Saved schedules</h2>
+        {
+          saved.length === 0 ? (
+            <p class="hint">None yet — press “Save schedule” on one you like.</p>
+          ) : (
+            <ol class="saved">
+              {saved.map((s, i) => (
+                <li>
+                  <a href={`/plan/${plan.id}/saved/${s.id}`}>Saved schedule {i + 1}</a>
+                  <small>
+                    {savedCodes(s.selection)} · saved {s.createdAt} UTC
+                  </small>
+                </li>
+              ))}
+            </ol>
+          )
+        }
+      </div>
     </section>
   </div>
 </Layout>
