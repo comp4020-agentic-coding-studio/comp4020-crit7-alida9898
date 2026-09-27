@@ -15,6 +15,13 @@
       "when": 1790488815182,
       "tag": "0001_redundant_vengeance",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790488976140,
+      "tag": "0002_lame_loki",
+      "breakpoints": true
     }
   ]
 }

@@ -3,6 +3,8 @@ import { dirname } from "node:path";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
+import timetable from "../../data/2026-S2.json?raw";
+import { DATA_VERSION, seedCatalogue } from "./seed";
 
 // One SQLite file is the app's whole persistent state. In production
 // fly.toml points DATABASE_PATH at the machine's volume (/data), which is
@@ -21,3 +23,7 @@ export const db = drizzle(client);
 // run them from. The flow: edit src/lib/schema.ts, `pnpm db:generate`,
 // commit the migration it writes to drizzle/.
 migrate(db, { migrationsFolder: "./drizzle" });
+
+// The catalogue ships inside the build (the ?raw import) so a deploy needs no
+// network; it's parsed only when its version differs from what's stored.
+seedCatalogue(db, () => JSON.parse(timetable), DATA_VERSION);
