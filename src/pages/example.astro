@@ -1,0 +1,40 @@
+---
+import Layout from "../components/Layout.astro";
+import WeekGrid from "../components/WeekGrid.astro";
+import { meetingsFor } from "../lib/catalogue";
+import { generate } from "../lib/generate";
+import { clampPage, emptyMessage } from "../lib/plan-view";
+
+// A read-only plan over real courses: something to look at before starting
+// your own, and a page the invariants can check without creating a plan.
+const ids = ["COMP1110_S2", "COMP2100_S2"];
+const colours = new Map(ids.map((id, i) => [id, i]));
+const result = generate(meetingsFor(ids));
+const total = result.schedules.length;
+const n = clampPage(Astro.url.searchParams.get("n"), total);
+const schedule = result.schedules[n - 1];
+---
+
+<Layout title="Example — ANU Schedule Builder">
+  <h1>Example: COMP1110 + COMP2100</h1>
+  <form method="post" action="/api/plans">
+    <button>Start your own plan</button>
+  </form>
+  {
+    schedule ? (
+      <>
+        <h2>
+          Schedule {n} of {total}
+          {result.capped && "+"}
+        </h2>
+        <nav aria-label="schedules" class="pager">
+          {n > 1 ? <a href={`?n=${n - 1}`}>← Previous</a> : <span>← Previous</span>}
+          {n < total ? <a href={`?n=${n + 1}`}>Next →</a> : <span>Next →</span>}
+        </nav>
+        <WeekGrid schedule={schedule} colours={colours} />
+      </>
+    ) : (
+      <p>{emptyMessage(ids.length, result)}</p>
+    )
+  }
+</Layout>

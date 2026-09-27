@@ -1,0 +1,141 @@
+---
+import Layout from "../../../components/Layout.astro";
+import WeekGrid from "../../../components/WeekGrid.astro";
+import { getCourses, meetingsFor, searchCourses } from "../../../lib/catalogue";
+import { courseCode, generate, toSelection } from "../../../lib/generate";
+import { clampPage, emptyMessage } from "../../../lib/plan-view";
+import { getPlan, listSaved, PLAN_COOKIE, planCookieOptions, planCourseIds } from "../../../lib/plans";
+
+const plan = getPlan(Astro.params.id ?? "");
+if (!plan) return Astro.rewrite("/404");
+// opening a plan's link makes it the one "Continue your plan" returns to
+Astro.cookies.set(PLAN_COOKIE, plan.id, planCookieOptions);
+
+const ids = planCourseIds(plan.id);
+const added = getCourses(ids);
+const colours = new Map(ids.map((id, i) => [id, i % 8]));
+const q = Astro.url.searchParams.get("q")?.trim() ?? "";
+const results = searchCourses(q);
+const result = generate(meetingsFor(ids));
+const total = result.schedules.length;
+const n = clampPage(Astro.url.searchParams.get("n"), total);
+const schedule = result.schedules[n - 1];
+const saved = listSaved(plan.id);
+const coursesAction = `/api/plans/${plan.id}/courses`;
+
+const pageLink = (k: number) => {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  params.set("n", String(k));
+  return `?${params}`;
+};
+const savedCodes = (selection: { courseId: string }[]) =>
+  [...new Set(selection.map((s) => courseCode(s.courseId)))].join(", ");
+---
+
+<Layout title="Your plan — ANU Schedule Builder">
+  <h1>Your plan</h1>
+  <p class="hint">This page's link is your plan — bookmark it to come back from anywhere.</p>
+  <div class="planner">
+    <aside aria-labelledby="courses-heading">
+      <h2 id="courses-heading">Courses</h2>
+      {
+        added.length === 0 ? (
+          <p>No courses yet — search below.</p>
+        ) : (
+          <ul class="course-list">
+            {added.map((c) => (
+              <li class={`c${colours.get(c.id)}`}>
+                <span>
+                  <strong>{c.code}</strong> {c.title}
+                </span>
+                <form method="post" action={coursesAction}>
+                  <input type="hidden" name="courseId" value={c.id} />
+                  <input type="hidden" name="action" value="remove" />
+                  <input type="hidden" name="q" value={q} />
+                  <button aria-label={`Remove ${c.code}`}>Remove</button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+      <form method="get" role="search" class="search">
+        <label for="q">Find a Semester 2 course</label>
+        <input id="q" name="q" value={q} placeholder="COMP1110 or programming" />
+        <button>Search</button>
+      </form>
+      {
+        q &&
+          (results.length === 0 ? (
+            <p>No Semester 2 courses match “{q}”.</p>
+          ) : (
+            <ul class="results">
+              {results.map((c) => (
+                <li>
+                  <span>
+                    <strong>{c.code}</strong> {c.title}
+                  </span>
+                  {ids.includes(c.id) ? (
+                    <span class="added">Added</span>
+                  ) : (
+                    <form method="post" action={coursesAction}>
+                      <input type="hidden" name="courseId" value={c.id} />
+                      <input type="hidden" name="action" value="add" />
+                      <input type="hidden" name="q" value={q} />
+                      <button aria-label={`Add ${c.code}`}>Add</button>
+                    </form>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ))
+      }
+    </aside>
+
+    <section aria-labelledby="schedule-heading" class="schedule">
+      {
+        schedule ? (
+          <>
+            <h2 id="schedule-heading">
+              Schedule {n} of {total}
+              {result.capped && "+"}
+            </h2>
+            {result.capped && <p class="hint">Showing the first {total} combinations.</p>}
+            <nav aria-label="schedules" class="pager">
+              {n > 1 ? <a href={pageLink(n - 1)}>← Previous</a> : <span>← Previous</span>}
+              {n < total ? <a href={pageLink(n + 1)}>Next →</a> : <span>Next →</span>}
+            </nav>
+            <WeekGrid schedule={schedule} colours={colours} />
+            <form method="post" action={`/api/plans/${plan.id}/saved`}>
+              <input type="hidden" name="selection" value={JSON.stringify(toSelection(schedule))} />
+              <input type="hidden" name="n" value={String(n)} />
+              <button>Save this schedule</button>
+            </form>
+          </>
+        ) : (
+          <>
+            <h2 id="schedule-heading">Schedules</h2>
+            <p>{emptyMessage(ids.length, result)}</p>
+          </>
+        )
+      }
+
+      <h2 id="saved">Saved schedules</h2>
+      {
+        saved.length === 0 ? (
+          <p>None yet.</p>
+        ) : (
+          <ol>
+            {saved.map((s, i) => (
+              <li>
+                <a href={`/plan/${plan.id}/saved/${s.id}`}>Saved schedule {i + 1}</a> —{" "}
+                {savedCodes(s.selection)}, saved {s.createdAt} UTC
+              </li>
+            ))}
+          </ol>
+        )
+      }
+    </section>
+  </div>
+</Layout>

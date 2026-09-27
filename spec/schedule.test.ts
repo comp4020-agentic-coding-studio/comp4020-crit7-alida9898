@@ -69,3 +69,69 @@ describe("schedule builder API", () => {
     expect(res.status).toBe(303);
   });
 });
+
+describe("schedule builder pages", () => {
+  let planPath = "";
+
+  it("tells an empty plan to add a course", async () => {
+    const res = await post("/api/plans", {});
+    planPath = res.headers.get("location") ?? "";
+    const { status, doc } = await page(planPath);
+    expect(status).toBe(200);
+    expect(doc.body.textContent).toContain("Add a course to see schedules.");
+  });
+
+  it("finds a course by code", async () => {
+    const { doc } = await page(`${planPath}?q=COMP1110`);
+    expect(doc.querySelector('button[aria-label="Add COMP1110"]')).toBeTruthy();
+  });
+
+  it("generates clash-free schedules once courses are added", async () => {
+    for (const courseId of ["COMP1110_S2", "COMP2100_S2"]) {
+      await post(api(planPath, "courses"), { courseId, action: "add" });
+    }
+    const { doc } = await page(planPath);
+    expect(doc.querySelector("#schedule-heading")?.textContent).toMatch(/Schedule 1 of \d+/);
+    expect(doc.querySelectorAll(".block").length).toBeGreaterThan(0);
+    expect(doc.querySelector('button[aria-label="Remove COMP2100"]')).toBeTruthy();
+  });
+
+  it("clamps a nonsense page number", async () => {
+    const { status, doc } = await page(`${planPath}?n=abc`);
+    expect(status).toBe(200);
+    expect(doc.querySelector("#schedule-heading")?.textContent).toMatch(/Schedule 1 of/);
+  });
+
+  it("keeps a saved schedule across a reload", async () => {
+    const before = await page(`${planPath}?n=2`);
+    const selection = before.doc.querySelector<HTMLInputElement>('input[name="selection"]')?.value ?? "";
+    const res = await post(api(planPath, "saved"), { selection, n: "2" });
+    expect(res.status).toBe(303);
+
+    const reloaded = await page(planPath);
+    const link = reloaded.doc.querySelector(`a[href^="${planPath}/saved/"]`);
+    expect(link).toBeTruthy();
+
+    const saved = await page(link?.getAttribute("href") ?? "");
+    expect(saved.status).toBe(200);
+    expect(saved.doc.querySelectorAll(".block").length).toBeGreaterThan(0);
+  });
+
+  it("has one h1 and the site nav on the planner", async () => {
+    const { doc } = await page(planPath);
+    expect(doc.querySelectorAll("h1")).toHaveLength(1);
+    expect(doc.querySelector('nav[aria-label="site"]')).toBeTruthy();
+  });
+
+  it("404s an unknown plan and an unknown saved schedule", async () => {
+    expect((await page("/plan/does-not-exist-000")).status).toBe(404);
+    expect((await page(`${planPath}/saved/999999`)).status).toBe(404);
+  });
+});
+
+describe("copy", () => {
+  it("keeps the spaces around inline links", async () => {
+    const { doc } = await page("/");
+    expect(doc.querySelector("footer")?.textContent?.replace(/\s+/g, " ")).toContain("ANU CSSA timetable scrape");
+  });
+});

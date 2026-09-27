@@ -1,8 +1,24 @@
 ---
 import Layout from "../components/Layout.astro";
+import { getPlan, PLAN_COOKIE } from "../lib/plans";
+
+const remembered = Astro.cookies.get(PLAN_COOKIE)?.value;
+const existing = remembered ? getPlan(remembered) : undefined;
 ---
 
 <Layout title="ANU Schedule Builder">
   <h1>ANU Schedule Builder</h1>
-  <p>Coming together — add your Semester 2 2026 courses and see every clash-free timetable.</p>
+  <p>
+    Add your Semester 2 2026 courses and see every clash-free timetable, one week at a time —
+    no more trying tutorials one by one. Save the ones you like.
+  </p>
+  {existing && <p><a href={`/plan/${existing.id}`} class="button">Continue your plan</a></p>}
+  <form method="post" action="/api/plans">
+    <button>{existing ? "Start a new plan" : "Start a plan"}</button>
+  </form>
+  <p><a href="/example/">See an example</a> with COMP1110 and COMP2100.</p>
+  <p class="hint">
+    There's no login: your plan lives at its own link, so bookmark it to come back from another
+    device. Anyone with that link can see and change it.
+  </p>
 </Layout>

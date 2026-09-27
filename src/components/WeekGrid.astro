@@ -1,0 +1,69 @@
+---
+// One schedule as a week: a column per day, blocks positioned by time.
+// Blocks are list items so the grid reads as "Monday: …" to a screen reader.
+import { courseCode, type Schedule } from "../lib/generate";
+import { layoutWeek } from "../lib/week-layout";
+
+interface Props {
+  schedule: Schedule;
+  // courseId → colour slot 0..7
+  colours: Map<string, number>;
+}
+
+const { schedule, colours } = Astro.props;
+const layout = layoutWeek(schedule);
+const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const span = layout.endMin - layout.startMin;
+const pct = (min: number) => `${((min - layout.startMin) / span) * 100}%`;
+const clock = (min: number) =>
+  `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+const hours: number[] = [];
+for (let m = layout.startMin; m < layout.endMin; m += 60) hours.push(m);
+---
+
+<div class="week-scroll" role="region" aria-label="Week view" tabindex="0">
+  <div class="week" style={`--days:${layout.days.length};--hours:${span / 60}`}>
+    <div class="hours" aria-hidden="true">
+      {hours.map((m) => <span style={`top:${pct(m)}`}>{clock(m)}</span>)}
+    </div>
+    {
+      layout.days.map((day) => (
+        <section class="day" aria-labelledby={`day-${day}`}>
+          <h3 id={`day-${day}`}>{DAY_NAMES[day]}</h3>
+          <ol class="slots">
+            {layout.blocks
+              .filter((b) => b.day === day)
+              .map((b) => (
+                <li
+                  class={`block c${colours.get(b.courseId) ?? 0}`}
+                  style={`top:${pct(b.startMin)};height:${(b.finishMin - b.startMin) / span * 100}%;left:${(b.lane / b.lanes) * 100}%;width:${100 / b.lanes}%`}
+                >
+                  <strong>{courseCode(b.courseId)}</strong> {b.activity}/{b.occurrence}
+                  <span>
+                    {clock(b.startMin)}–{clock(b.finishMin)}
+                  </span>
+                  {b.location && <span>{b.location}</span>}
+                </li>
+              ))}
+          </ol>
+        </section>
+      ))
+    }
+  </div>
+</div>
+{
+  layout.oneOffs.length > 0 && (
+    <>
+      <h3>One-off sessions</h3>
+      <ul class="one-offs">
+        {layout.oneOffs.map((m) => (
+          <li>
+            <strong>{courseCode(m.courseId)}</strong> {m.activity}/{m.occurrence} — {DAY_NAMES[m.day]}{" "}
+            {clock(m.startMin)}–{clock(m.finishMin)}, calendar week {m.weekList.join(" & ")}
+            {m.location && `, ${m.location}`}
+          </li>
+        ))}
+      </ul>
+    </>
+  )
+}

@@ -1,0 +1,11 @@
+---
+import Layout from "../components/Layout.astro";
+
+Astro.response.status = 404;
+---
+
+<Layout title="Not found — ANU Schedule Builder">
+  <h1>Not found</h1>
+  <p>That plan or schedule doesn't exist. Plans live at their own link — check you copied all of it.</p>
+  <p><a href="/">Start again</a></p>
+</Layout>

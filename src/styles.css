@@ -1,40 +1,183 @@
 body {
   margin: 0;
-  padding: 2rem;
+  padding: 1rem;
   font-family: system-ui, sans-serif;
-  line-height: 1.6;
+  line-height: 1.5;
   color: #1a1a1a;
+  background: #fff;
 }
 
-main {
-  max-width: 40rem;
+body > nav,
+main,
+footer {
+  max-width: 72rem;
   margin: 0 auto;
+}
+
+body > nav {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+footer {
+  margin-top: 3rem;
+  font-size: 0.85rem;
+  color: #555;
 }
 
 a {
   color: #0b5fff;
 }
 
-form {
+button,
+.button {
+  padding: 0.35rem 0.9rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+input {
+  padding: 0.35rem 0.6rem;
+  font: inherit;
+  min-width: 0;
+}
+
+.hint {
+  color: #555;
+}
+
+/* --- planner layout --- */
+
+.planner {
+  display: grid;
+  gap: 2rem;
+}
+
+/* let the week grid scroll inside its column instead of widening the page */
+.planner > * {
+  min-width: 0;
+}
+
+@media (min-width: 60rem) {
+  .planner {
+    grid-template-columns: 20rem 1fr;
+  }
+}
+
+.course-list,
+.results {
+  list-style: none;
+  padding: 0;
+}
+
+.course-list li,
+.results li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.course-list li {
+  border-left: 0.4rem solid var(--course);
+}
+
+.search {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
-  margin-block: 1.5rem;
 }
 
-input {
+.search label {
+  width: 100%;
+}
+
+.search input {
   flex: 1;
-  min-width: 12rem;
-  padding: 0.4rem 0.6rem;
-  font: inherit;
 }
 
-button {
-  padding: 0.4rem 1rem;
-  font: inherit;
+.added {
+  color: #555;
 }
 
-#messages {
-  padding-inline-start: 1.2rem;
+.pager {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
 }
+
+.pager span {
+  color: #999;
+}
+
+/* --- week grid --- */
+
+.week-scroll {
+  overflow-x: auto;
+}
+
+.week {
+  --row: 3rem;
+  display: grid;
+  grid-template-columns: 3.5rem repeat(var(--days), minmax(6rem, 1fr));
+  min-width: 36rem;
+}
+
+.hours {
+  position: relative;
+  margin-top: 2rem;
+  height: calc(var(--hours) * var(--row));
+  font-size: 0.75rem;
+  color: #555;
+}
+
+.hours span {
+  position: absolute;
+  transform: translateY(-0.5em);
+}
+
+.day h3 {
+  height: 2rem;
+  margin: 0;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.slots {
+  position: relative;
+  height: calc(var(--hours) * var(--row));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-left: 1px solid #e5e5e5;
+  background: repeating-linear-gradient(to bottom, #e5e5e5 0 1px, transparent 1px var(--row));
+}
+
+.block {
+  position: absolute;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 0.2rem 0.3rem;
+  border-left: 0.3rem solid var(--course);
+  border-radius: 0.25rem;
+  background: color-mix(in srgb, var(--course) 18%, white);
+  font-size: 0.75rem;
+  line-height: 1.25;
+}
+
+.block span {
+  display: block;
+}
+
+.c0 { --course: #1f77b4; }
+.c1 { --course: #d62728; }
+.c2 { --course: #2ca02c; }
+.c3 { --course: #9467bd; }
+.c4 { --course: #ff7f0e; }
+.c5 { --course: #8c564b; }
+.c6 { --course: #e377c2; }
+.c7 { --course: #17becf; }
