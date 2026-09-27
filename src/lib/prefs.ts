@@ -53,3 +53,19 @@ export function activityLabel(activity: string): string {
   const name = ACTIVITY_NAMES[activity.slice(0, 3)];
   return name ? `${name} ${activity.slice(3)}`.trim() : activity;
 }
+
+// "ComA: only 03" / "LecA: not 01, 02" — one line per marked activity, in
+// activity order, for showing a course's marks at a glance.
+export function summarisePrefs(prefs: ClassPref[], courseId: string): string[] {
+  const byActivity = new Map<string, { only: string[]; exclude: string[] }>();
+  for (const p of prefs.filter((x) => x.courseId === courseId)) {
+    const entry = byActivity.get(p.activity) ?? { only: [], exclude: [] };
+    entry[p.mode].push(p.occurrence);
+    byActivity.set(p.activity, entry);
+  }
+  return [...byActivity]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([activity, { only, exclude }]) =>
+      only.length ? `${activity}: only ${only.sort().join(", ")}` : `${activity}: not ${exclude.sort().join(", ")}`,
+    );
+}

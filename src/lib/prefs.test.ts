@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Meeting } from "./generate";
-import { activityLabel, applyPrefs, type ClassPref } from "./prefs";
+import { activityLabel, applyPrefs, type ClassPref, summarisePrefs } from "./prefs";
 
 const mt = (courseId: string, activity: string, occurrence: string, day = 0): Meeting => ({
   courseId,
@@ -65,5 +65,13 @@ describe("activityLabel", () => {
     expect(activityLabel("TutB")).toBe("Tutorial B");
     expect(activityLabel("ComA")).toBe("Computer lab A");
     expect(activityLabel("XyzA")).toBe("XyzA");
+  });
+});
+
+describe("summarisePrefs", () => {
+  it("says, per activity, which classes are kept or left out", () => {
+    const prefs = [pref("03", "only"), pref("01", "exclude", "COMP2100_S2", "LecA"), pref("02", "exclude", "COMP2100_S2", "LecA")];
+    expect(summarisePrefs(prefs, "COMP2100_S2")).toEqual(["LecA: not 01, 02", "TutA: only 03"]);
+    expect(summarisePrefs(prefs, "MATH1014_S2")).toEqual([]);
   });
 });

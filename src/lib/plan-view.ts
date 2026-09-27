@@ -13,7 +13,7 @@ export function emptyMessage(courseCount: number, result: GenerateResult, narrow
   if (courseCount === 0) return "Add a course to see schedules.";
   if (result.capped) return "Too many combinations to search. Try removing a course.";
   if (result.unschedulable && narrowed.has(result.unschedulable)) {
-    return `No clash-free schedule: the ${result.unschedulable} classes you kept all clash with a class you can't move. Widen your choice under “Choose classes”.`;
+    return `No clash-free schedule: the ${result.unschedulable} classes you kept all clash with a class you can't move. Widen your choice on its page under “Your courses”.`;
   }
   if (result.unschedulable) {
     return `No clash-free schedule: every ${result.unschedulable} class clashes with a class you can't move.`;

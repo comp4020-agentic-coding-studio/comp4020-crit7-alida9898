@@ -1,12 +1,13 @@
 ---
 // Every page's shell: the invariants in spec/ want a language, a viewport,
 // a real title, a nav landmark and exactly one h1 (the page supplies the h1).
-// Plan pages pass `plan` to get the Schedules / Search / Saved tab bar.
+// Plan pages pass `plan` to get the left-hand plan sidebar.
 import "../styles.css";
+import PlanSidebar, { type PlanPage } from "./PlanSidebar.astro";
 
 interface Props {
   title: string;
-  plan?: { id: string; savedCount: number; tab: "schedules" | "search" | "saved" };
+  plan?: { id: string; current: PlanPage; course?: string; savedId?: number };
 }
 
 const { title, plan } = Astro.props;
@@ -35,23 +36,19 @@ const { title, plan } = Astro.props;
       </nav>
     </header>
     {
-      plan && (
-        <nav aria-label="plan" class="tabs">
-          <a href={`/plan/${plan.id}`} aria-current={plan.tab === "schedules" ? "page" : undefined}>
-            Schedules
-          </a>
-          <a href={`/plan/${plan.id}/search`} aria-current={plan.tab === "search" ? "page" : undefined}>
-            Search courses
-          </a>
-          <a href={`/plan/${plan.id}#saved`} aria-current={plan.tab === "saved" ? "page" : undefined}>
-            Saved ({plan.savedCount})
-          </a>
-        </nav>
+      plan ? (
+        <div class="shell">
+          <PlanSidebar planId={plan.id} current={plan.current} course={plan.course} savedId={plan.savedId} />
+          <main>
+            <slot />
+          </main>
+        </div>
+      ) : (
+        <main>
+          <slot />
+        </main>
       )
     }
-    <main>
-      <slot />
-    </main>
     <footer>
       <p>
         Class data: the <a href="https://github.com/anucssa/anutimetable">ANU CSSA timetable</a>{" "}

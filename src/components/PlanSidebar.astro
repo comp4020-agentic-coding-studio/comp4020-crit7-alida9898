@@ -1,0 +1,90 @@
+---
+// The plan's left-hand navigation, UMN-style: search, the plan's courses
+// (with their class marks), the generated schedules and the saved ones. It
+// loads its own data so every plan page shows the same thing.
+import { getCourses } from "../lib/catalogue";
+import { courseCode } from "../lib/generate";
+import { listPrefs, listSaved, planCourseIds } from "../lib/plans";
+import { summarisePrefs } from "../lib/prefs";
+
+export type PlanPage = "schedules" | "search" | "saved";
+
+interface Props {
+  planId: string;
+  current: PlanPage;
+  course?: string;
+  savedId?: number;
+}
+
+const { planId, current, course, savedId } = Astro.props;
+const ids = planCourseIds(planId);
+const courses = getCourses(ids);
+const colours = new Map(ids.map((id, i) => [id, i % 8]));
+const prefs = listPrefs(planId);
+const saved = listSaved(planId);
+const home = `/plan/${planId}`;
+const here = `${Astro.url.pathname}${Astro.url.search}`;
+const is = (yes: boolean) => (yes ? "page" : undefined);
+---
+
+<aside class="sidebar" aria-label="Your plan">
+  <div class="side-inner">
+  <form method="get" action={`${home}/search`} role="search" aria-label="Quick search" class="side-search">
+    <label for="side-q" class="side-label">Search courses</label>
+    <input id="side-q" name="q" placeholder="COMP2100, computing…" />
+  </form>
+
+  <nav aria-label="Plan sections" class="side-nav">
+    <h2 class="side-label">Explore</h2>
+    <a href={`${home}/search`} aria-current={is(current === "search" && !course)}>Subjects &amp; search</a>
+
+    <h2 class="side-label">Your courses <span class="count">{courses.length}</span></h2>
+    {
+      courses.length === 0 ? (
+        <p class="side-empty">None yet — search to add some.</p>
+      ) : (
+        <ul class="course-list">
+          {courses.map((c) => (
+            <li class={`c${colours.get(c.id)}`}>
+              <a href={`${home}/search?course=${c.id}`} aria-current={is(course === c.id)} class="name">
+                <strong>{c.code}</strong>
+                <small>{c.title}</small>
+                {summarisePrefs(prefs, c.id).map((line) => (
+                  <small class="pref">{line}</small>
+                ))}
+              </a>
+              <form method="post" action={`/api/plans/${planId}/courses`}>
+                <input type="hidden" name="courseId" value={c.id} />
+                <input type="hidden" name="action" value="remove" />
+                <input type="hidden" name="back" value={here} />
+                <button class="ghost" aria-label={`Remove ${c.code}`}>×</button>
+              </form>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+
+    <h2 class="side-label">Schedules</h2>
+    <a href={home} aria-current={is(current === "schedules")}>All clash-free combinations</a>
+
+    <h2 class="side-label" id="saved">Saved <span class="count">{saved.length}</span></h2>
+    {
+      saved.length === 0 ? (
+        <p class="side-empty">Press “Save schedule” on one you like.</p>
+      ) : (
+        <ol class="side-saved">
+          {saved.map((s, i) => (
+            <li>
+              <a href={`${home}/saved/${s.id}`} aria-current={is(savedId === s.id)}>
+                Saved schedule {i + 1}
+                <small>{[...new Set(s.selection.map((x) => courseCode(x.courseId)))].join(", ")}</small>
+              </a>
+            </li>
+          ))}
+        </ol>
+      )
+    }
+  </nav>
+  </div>
+</aside>

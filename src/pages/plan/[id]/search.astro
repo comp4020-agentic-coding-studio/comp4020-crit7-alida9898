@@ -4,7 +4,7 @@ import Layout from "../../../components/Layout.astro";
 import { allCourses, allSubjects, courseInfo, meetingsFor } from "../../../lib/catalogue";
 import { filterCourses, levelOf, levelsIn, matchSubjects, parseSubject } from "../../../lib/course-search";
 import { groupOptions } from "../../../lib/generate";
-import { getPlan, listPrefs, listSaved, planCourseIds } from "../../../lib/plans";
+import { getPlan, listPrefs, planCourseIds } from "../../../lib/plans";
 
 const plan = getPlan(Astro.params.id ?? "");
 if (!plan) return Astro.rewrite("/404");
@@ -29,7 +29,6 @@ const browsing = !subject && !focus && q.length < 2;
 const planIds = planCourseIds(plan.id);
 const inPlan = new Set(planIds);
 const prefs = listPrefs(plan.id);
-const savedCount = listSaved(plan.id).length;
 const activitiesOf = new Map<string, ReturnType<typeof groupOptions>>();
 for (const options of groupOptions(meetingsFor(results.map((c) => c.id)))) {
   const id = options[0].courseId;
@@ -60,7 +59,7 @@ const openClasses = (id: string) => results.length <= 3 || inPlan.has(id);
 
 <Layout
   title="Search courses — ANU Schedule Builder"
-  plan={{ id: plan.id, savedCount, tab: "search" }}
+  plan={{ id: plan.id, current: "search", course: focus?.id }}
 >
   <div class="page-head">
     <h1>Search courses</h1>

@@ -286,6 +286,45 @@ describe("course details and class choices", () => {
   });
 });
 
+describe("plan sidebar", () => {
+  let planPath = "";
+  let savedHref = "";
+  const sidebar = (doc: Document) => doc.querySelector('aside[aria-label="Your plan"]');
+
+  beforeAll(async () => {
+    const res = await post("/api/plans", {});
+    planPath = res.headers.get("location") ?? "";
+    await post(api(planPath, "courses"), { courseId: "COMP2100_S2", action: "add" });
+    await post(api(planPath, "classes"), { courseId: "COMP2100_S2", activity: "ComA", occurrence: "02", mode: "exclude" });
+    const selection = (await page(planPath)).doc.querySelector<HTMLInputElement>('input[name="selection"]')?.value ?? "";
+    await post(api(planPath, "saved"), { selection });
+    savedHref = (await page(planPath)).doc.querySelector(`a[href^="${planPath}/saved/"]`)?.getAttribute("href") ?? "";
+  });
+
+  it("follows you across the plan's pages with your courses, marks and saved schedules", async () => {
+    const { doc: search } = await page(`${planPath}/search?subject=MATH`);
+    const saved = sidebar(search)?.querySelector(`a[href^="${planPath}/saved/"]`)?.getAttribute("href") ?? "";
+    expect(saved).toBeTruthy();
+    for (const path of [planPath, `${planPath}/search?subject=MATH`, saved]) {
+      const side = sidebar((await page(path)).doc);
+      expect(side?.querySelector('button[aria-label="Remove COMP2100"]'), path).toBeTruthy();
+      expect(side?.textContent, path).toContain("ComA: not 02");
+      expect(side?.querySelector(`a[href="${planPath}/search?course=COMP2100_S2"]`), path).toBeTruthy();
+    }
+  });
+
+  it("searches from anywhere in the plan", async () => {
+    const form = sidebar((await page(savedHref)).doc)?.querySelector("form[role=search]");
+    expect(form?.getAttribute("action")).toBe(`${planPath}/search`);
+  });
+
+  it("removing a course from the sidebar returns to the same page", async () => {
+    const back = `${planPath}/search?subject=MATH`;
+    const res = await post(api(planPath, "courses"), { courseId: "COMP2100_S2", action: "remove", back });
+    expect(res.headers.get("location")).toBe(back);
+  });
+});
+
 // The invariants' axe floor, for the pages that need a plan to exist (so
 // can't be listed in routes.ts): same rules, same jsdom limits.
 describe("accessibility of plan pages", () => {

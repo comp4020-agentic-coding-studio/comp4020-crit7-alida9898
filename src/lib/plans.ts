@@ -127,5 +127,6 @@ export function setPref(planId: string, target: Omit<ClassPref, "mode">, mode: C
 // never somewhere a forged `back` field names.
 export function backTo(planId: string, back: string): string | undefined {
   const home = `/plan/${planId}`;
-  return back === home || back.startsWith(`${home}/search`) || back.startsWith(`${home}?`) ? back : undefined;
+  const ours = [`${home}/search`, `${home}/saved/`, `${home}?`];
+  return back === home || ours.some((prefix) => back.startsWith(prefix)) ? back : undefined;
 }

@@ -1,10 +1,10 @@
 ---
 import Layout from "../../../components/Layout.astro";
 import WeekGrid from "../../../components/WeekGrid.astro";
-import { getCourses, meetingsFor } from "../../../lib/catalogue";
+import { meetingsFor } from "../../../lib/catalogue";
 import { courseCode, generate, toSelection } from "../../../lib/generate";
 import { clampPage, emptyMessage } from "../../../lib/plan-view";
-import { getPlan, listPrefs, listSaved, PLAN_COOKIE, planCookieOptions, planCourseIds } from "../../../lib/plans";
+import { getPlan, listPrefs, PLAN_COOKIE, planCookieOptions, planCourseIds } from "../../../lib/plans";
 import { applyPrefs } from "../../../lib/prefs";
 
 const plan = getPlan(Astro.params.id ?? "");
@@ -13,7 +13,6 @@ if (!plan) return Astro.rewrite("/404");
 Astro.cookies.set(PLAN_COOKIE, plan.id, planCookieOptions);
 
 const ids = planCourseIds(plan.id);
-const added = getCourses(ids);
 const colours = new Map(ids.map((id, i) => [id, i % 8]));
 const prefs = listPrefs(plan.id);
 const pool = applyPrefs(meetingsFor(ids), prefs);
@@ -23,159 +22,72 @@ const result = pool.emptied.length > 0 ? generate([]) : generate(pool.meetings);
 const total = result.schedules.length;
 const n = clampPage(Astro.url.searchParams.get("n"), total);
 const schedule = result.schedules[n - 1];
-const saved = listSaved(plan.id);
-const coursesAction = `/api/plans/${plan.id}/courses`;
-
 const pageLink = (k: number) => `?n=${k}`;
-// "ComA: only 03 · not 01, 02" for a course's marks, grouped by activity
-const prefSummary = (courseId: string) => {
-  const byActivity = new Map<string, { only: string[]; exclude: string[] }>();
-  for (const p of prefs.filter((x) => x.courseId === courseId)) {
-    const entry = byActivity.get(p.activity) ?? { only: [], exclude: [] };
-    entry[p.mode].push(p.occurrence);
-    byActivity.set(p.activity, entry);
-  }
-  return [...byActivity].map(([activity, { only, exclude }]) =>
-    only.length ? `${activity}: only ${only.join(", ")}` : `${activity}: not ${exclude.join(", ")}`,
-  );
-};
-const savedCodes = (selection: { courseId: string }[]) =>
-  [...new Set(selection.map((s) => courseCode(s.courseId)))].join(", ");
 ---
 
-<Layout
-  title="Your plan — ANU Schedule Builder"
-  plan={{ id: plan.id, savedCount: saved.length, tab: "schedules" }}
->
+<Layout title="Your plan — ANU Schedule Builder" plan={{ id: plan.id, current: "schedules" }}>
   <div class="page-head">
     <h1>Your plan</h1>
     <p class="hint">This page's link is your plan — bookmark it to come back from anywhere.</p>
   </div>
-  <div class="planner">
-    <aside>
-      <section class="card" aria-labelledby="courses-heading">
-        <h2 id="courses-heading" class="card-title">Your courses</h2>
-        <div class="card-body">
-          {
-            added.length === 0 ? (
-              <p class="hint">No courses yet — search below.</p>
-            ) : (
-              <ul class="course-list">
-                {added.map((c) => (
-                  <li class={`c${colours.get(c.id)}`}>
-                    <span class="name">
-                      <strong>{c.code}</strong>
-                      <small>{c.title}</small>
-                      {prefSummary(c.id).map((line) => (
-                        <small class="pref">{line}</small>
-                      ))}
-                      <a class="choose" href={`/plan/${plan.id}/search?course=${c.id}`}>
-                        Choose classes
-                      </a>
-                    </span>
-                    <form method="post" action={coursesAction}>
-                      <input type="hidden" name="courseId" value={c.id} />
-                      <input type="hidden" name="action" value="remove" />
-                      <button class="ghost" aria-label={`Remove ${c.code}`}>×</button>
-                    </form>
-                  </li>
-                ))}
-              </ul>
-            )
-          }
-        </div>
-      </section>
 
-      <section class="card" aria-labelledby="add-heading">
-        <h2 id="add-heading" class="card-title">Add a course</h2>
-        <div class="card-body">
-          <form method="get" action={`/plan/${plan.id}/search`} role="search" class="search">
-            <label for="q">Code, title or subject</label>
-            <div class="row">
-              <input id="q" name="q" placeholder="COMP, COMP2100, computing…" />
-              <button class="secondary">Search</button>
-            </div>
-          </form>
-          <p class="browse">
-            <a class="btn" href={`/plan/${plan.id}/search`}>Browse by subject and level →</a>
-          </p>
-        </div>
-      </section>
-    </aside>
-
-    <section class="card schedule" aria-labelledby="schedule-heading">
-      {
-        schedule ? (
-          <>
-            <div class="sched-head">
-              <div>
-                <h2 id="schedule-heading">
-                  Schedule {n} <span class="of">of {total}{result.capped && "+"}</span>
-                </h2>
-                <p class="hint">
-                  Every combination shown is clash-free.
-                  {result.capped && ` Showing the first ${total}.`}
-                </p>
-              </div>
-              <div class="toolbar">
-                <nav aria-label="schedules" class="pager">
-                  {n > 1 ? (
-                    <a class="btn" href={pageLink(n - 1)}>‹ Previous</a>
-                  ) : (
-                    <span class="btn disabled">‹ Previous</span>
-                  )}
-                  {n < total ? (
-                    <a class="btn" href={pageLink(n + 1)}>Next ›</a>
-                  ) : (
-                    <span class="btn disabled">Next ›</span>
-                  )}
-                </nav>
-                <form method="post" action={`/api/plans/${plan.id}/saved`}>
-                  <input type="hidden" name="selection" value={JSON.stringify(toSelection(schedule))} />
-                  <input type="hidden" name="n" value={String(n)} />
-                  <button class="primary">Save schedule</button>
-                </form>
-              </div>
-            </div>
-            <div class="card-body">
-              <WeekGrid schedule={schedule} colours={colours} />
-            </div>
-          </>
-        ) : (
-          <>
-            <div class="sched-head">
-              <h2 id="schedule-heading">Schedules</h2>
-            </div>
-            <div class="card-body">
-              <p class="empty">
-                {pool.emptied.length > 0
-                  ? `You've excluded every ${pool.emptied[0]} class — undo one under “Choose classes”.`
-                  : emptyMessage(ids.length, result, narrowed)}
+  <section class="card schedule" aria-labelledby="schedule-heading">
+    {
+      schedule ? (
+        <>
+          <div class="sched-head">
+            <div>
+              <h2 id="schedule-heading">
+                Schedule {n} <span class="of">of {total}{result.capped && "+"}</span>
+              </h2>
+              <p class="hint">
+                Every combination shown is clash-free.
+                {result.capped && ` Showing the first ${total}.`}
               </p>
             </div>
-          </>
-        )
-      }
-
-      <div class="card-body saved-block">
-        <h2 id="saved" class="sub">Saved schedules</h2>
-        {
-          saved.length === 0 ? (
-            <p class="hint">None yet — press “Save schedule” on one you like.</p>
-          ) : (
-            <ol class="saved">
-              {saved.map((s, i) => (
-                <li>
-                  <a href={`/plan/${plan.id}/saved/${s.id}`}>Saved schedule {i + 1}</a>
-                  <small>
-                    {savedCodes(s.selection)} · saved {s.createdAt} UTC
-                  </small>
-                </li>
-              ))}
-            </ol>
-          )
-        }
-      </div>
-    </section>
-  </div>
+            <div class="toolbar">
+              <nav aria-label="schedules" class="pager">
+                {n > 1 ? (
+                  <a class="btn" href={pageLink(n - 1)}>‹ Previous</a>
+                ) : (
+                  <span class="btn disabled">‹ Previous</span>
+                )}
+                {n < total ? (
+                  <a class="btn" href={pageLink(n + 1)}>Next ›</a>
+                ) : (
+                  <span class="btn disabled">Next ›</span>
+                )}
+              </nav>
+              <form method="post" action={`/api/plans/${plan.id}/saved`}>
+                <input type="hidden" name="selection" value={JSON.stringify(toSelection(schedule))} />
+                <input type="hidden" name="n" value={String(n)} />
+                <button class="primary">Save schedule</button>
+              </form>
+            </div>
+          </div>
+          <div class="card-body">
+            <WeekGrid schedule={schedule} colours={colours} />
+          </div>
+        </>
+      ) : (
+        <>
+          <div class="sched-head">
+            <h2 id="schedule-heading">Schedules</h2>
+          </div>
+          <div class="card-body">
+            <p class="empty">
+              {pool.emptied.length > 0
+                ? `You've excluded every ${pool.emptied[0]} class — undo one from its page under “Your courses”.`
+                : emptyMessage(ids.length, result, narrowed)}
+            </p>
+            {ids.length === 0 && (
+              <p class="empty-action">
+                <a class="btn primary" href={`/plan/${plan.id}/search`}>Find courses</a>
+              </p>
+            )}
+          </div>
+        </>
+      )
+    }
+  </section>
 </Layout>
