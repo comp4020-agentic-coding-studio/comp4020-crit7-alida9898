@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterCourses, levelOf, levelsIn, matchSubjects, subjectOf, type Subject } from "./course-search";
+import { filterCourses, levelOf, levelsIn, matchSubjects, parseSubject, subjectOf, type Subject } from "./course-search";
 
 const course = (code: string, title: string) => ({ id: `${code}_S2`, code, title });
 const COURSES = [
@@ -35,6 +35,10 @@ describe("matchSubjects", () => {
     expect(codes(matchSubjects(SUBJECTS, "mathematics"))).toEqual(["MATH"]);
   });
 
+  it("reads a subject picked from the list as its code", () => {
+    expect(codes(matchSubjects(SUBJECTS, "COMP — Computer Science"))).toEqual(["COMP"]);
+  });
+
   it("ignores a one-letter query", () => {
     expect(matchSubjects(SUBJECTS, "c")).toEqual([]);
   });
@@ -49,12 +53,23 @@ describe("filterCourses", () => {
     expect(codes(filterCourses(COURSES, SUBJECTS, { subject: "COMP", level: 2000 }))).toEqual(["COMP2100"]);
   });
 
-  it("treats a subject name as that subject, plus titles that mention it", () => {
+  it("treats a subject name as that subject, listed before titles that mention it", () => {
     expect(codes(filterCourses(COURSES, SUBJECTS, { q: "computing" }))).toEqual([
-      "ASTR4004",
       "COMP1110",
       "COMP2100",
       "COMP6250",
+      "ASTR4004",
+    ]);
+  });
+
+  it("puts code matches first for a subject code query", () => {
+    const more = [...COURSES, course("PHYS2020", "Computational Physics")];
+    expect(codes(filterCourses(more, SUBJECTS, { q: "comp" }))).toEqual([
+      "COMP1110",
+      "COMP2100",
+      "COMP6250",
+      "ASTR4004",
+      "PHYS2020",
     ]);
   });
 
@@ -74,5 +89,15 @@ describe("filterCourses", () => {
 describe("levelsIn", () => {
   it("lists the levels present, in order", () => {
     expect(levelsIn(COURSES)).toEqual([1000, 2000, 4000, 6000]);
+  });
+});
+
+describe("parseSubject", () => {
+  it("takes the code from a typed or picked subject", () => {
+    expect(parseSubject("COMP — Computer Science", SUBJECTS)).toBe("COMP");
+    expect(parseSubject("math", SUBJECTS)).toBe("MATH");
+    expect(parseSubject("Computer Science", SUBJECTS)).toBe("COMP");
+    expect(parseSubject("nope", SUBJECTS)).toBeUndefined();
+    expect(parseSubject("", SUBJECTS)).toBeUndefined();
   });
 });

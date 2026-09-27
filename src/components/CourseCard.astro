@@ -1,0 +1,149 @@
+---
+// One course in the search results: what it is, who runs it, a link to the
+// official page, and its classes grouped by activity, each of which can be
+// kept in the pool (default), chosen as the only one, or excluded.
+import type { Course, CourseInfo } from "../lib/catalogue";
+import type { Option } from "../lib/generate";
+import { activityLabel, type ClassPref } from "../lib/prefs";
+
+interface Props {
+  course: Course;
+  info: CourseInfo | undefined;
+  // one inner array per activity, as groupOptions returns
+  activities: Option[][];
+  inPlan: boolean;
+  prefs: ClassPref[];
+  planId: string;
+  back: string;
+  open: boolean;
+}
+
+const { course, info, activities, inPlan, prefs, planId, back, open } = Astro.props;
+const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const clock = (min: number) =>
+  `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+const weeks = (w: string) => w.replace(/[‐-―]/g, "–").replace(/,/g, ", ");
+const modeOf = (o: Option) => prefs.find((p) => p.activity === o.activity && p.occurrence === o.occurrence)?.mode;
+const hasOnly = (options: Option[]) => options.some((o) => modeOf(o) === "only");
+const SHORT = 260;
+const description = info?.description ?? "";
+const isShort = description.length <= SHORT;
+const classCount = activities.reduce((n, a) => n + a.length, 0);
+---
+
+<article class="card course-card" id={`course-${course.id}`}>
+  <header class="course-head">
+    <div class="name">
+      <h3>
+        <strong>{course.code}</strong>
+        {course.title}
+      </h3>
+      <p class="meta">
+        {info?.units && <span>{info.units}</span>}
+        {info?.conveners.length ? <span>Convener: {info.conveners.join(", ")}</span> : null}
+        <a href={course.link} target="_blank" rel="noopener">Programs and Courses ↗</a>
+      </p>
+    </div>
+    {
+      inPlan ? (
+        <form method="post" action={`/api/plans/${planId}/courses`}>
+          <input type="hidden" name="courseId" value={course.id} />
+          <input type="hidden" name="action" value="remove" />
+          <input type="hidden" name="back" value={back} />
+          <span class="added">✓ In your plan</span>{" "}
+          <button class="small" aria-label={`Remove ${course.code}`}>Remove</button>
+        </form>
+      ) : (
+        <form method="post" action={`/api/plans/${planId}/courses`}>
+          <input type="hidden" name="courseId" value={course.id} />
+          <input type="hidden" name="action" value="add" />
+          <input type="hidden" name="back" value={back} />
+          <button class="primary" aria-label={`Add ${course.code}`}>Add course</button>
+        </form>
+      )
+    }
+  </header>
+
+  {
+    description &&
+      (isShort ? (
+        <p class="desc">{description}</p>
+      ) : (
+        <details class="desc">
+          <summary>{description.slice(0, SHORT).replace(/\s+\S*$/, "")}… <span>more</span></summary>
+          <p>{description}</p>
+        </details>
+      ))
+  }
+
+  <details class="classes" open={open}>
+    <summary>
+      Classes <span class="hint">· {activities.length} activities, {classCount} classes</span>
+    </summary>
+    <p class="hint">
+      Every class is in the mix by default. <strong>Only</strong> keeps just the classes you mark in that
+      activity; <strong>Exclude</strong> leaves one out.
+    </p>
+    {
+      activities.map((options) => (
+        <section class="activity">
+          <h4>
+            {activityLabel(options[0].activity)}
+            {options.length === 1 && <span class="hint"> · the only class</span>}
+          </h4>
+          <ul>
+            {options.map((o) => {
+              const mode = modeOf(o);
+              const leftOut = !mode && hasOnly(options);
+              const label = `${course.code} ${o.activity}/${o.occurrence}`;
+              const state = mode === "only" ? "Only" : mode === "exclude" ? "Excluded" : leftOut ? "Left out" : "";
+              return (
+                <li class={`class-row ${mode ?? (leftOut ? "left-out" : "")}`}>
+                  <span class="occ">{o.occurrence}</span>
+                  <span class="times">
+                    {o.meetings.map((m) => (
+                      <span>
+                        <strong>
+                          {DAYS[m.day]} {clock(m.startMin)}–{clock(m.finishMin)}
+                        </strong>{" "}
+                        <small>
+                          cal. wk {weeks(m.weeks)}
+                          {m.location && ` · ${m.location}`}
+                        </small>
+                      </span>
+                    ))}
+                  </span>
+                  {state && <span class={`badge ${mode ?? "left-out"}`}>{state}</span>}
+                  {options.length > 1 && (
+                    <form method="post" action={`/api/plans/${planId}/classes`} class="class-actions">
+                      <input type="hidden" name="courseId" value={course.id} />
+                      <input type="hidden" name="activity" value={o.activity} />
+                      <input type="hidden" name="occurrence" value={o.occurrence} />
+                      <input type="hidden" name="back" value={back} />
+                      {mode ? (
+                        <button class="small" name="mode" value="clear" aria-label={`Undo ${label}`}>
+                          Undo
+                        </button>
+                      ) : (
+                        <>
+                          <button class="small" name="mode" value="only" aria-label={`Only ${label}`}>
+                            Only
+                          </button>
+                          {!leftOut && (
+                            <button class="small subtle" name="mode" value="exclude" aria-label={`Exclude ${label}`}>
+                              Exclude
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </form>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))
+    }
+  </details>
+</article>

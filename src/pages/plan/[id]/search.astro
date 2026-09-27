@@ -1,8 +1,10 @@
 ---
+import CourseCard from "../../../components/CourseCard.astro";
 import Layout from "../../../components/Layout.astro";
-import { allCourses, allSubjects } from "../../../lib/catalogue";
-import { filterCourses, levelOf, levelsIn, matchSubjects, subjectOf } from "../../../lib/course-search";
-import { getPlan, listSaved, planCourseIds } from "../../../lib/plans";
+import { allCourses, allSubjects, courseInfo, meetingsFor } from "../../../lib/catalogue";
+import { filterCourses, levelOf, levelsIn, matchSubjects, parseSubject } from "../../../lib/course-search";
+import { groupOptions } from "../../../lib/generate";
+import { getPlan, listPrefs, listSaved, planCourseIds } from "../../../lib/plans";
 
 const plan = getPlan(Astro.params.id ?? "");
 if (!plan) return Astro.rewrite("/404");
@@ -11,23 +13,31 @@ const courses = allCourses();
 const subjects = allSubjects(courses);
 const params = Astro.url.searchParams;
 const q = params.get("q")?.trim() ?? "";
-const subjectParam = params.get("subject")?.toUpperCase() ?? "";
-const subject = subjects.find((s) => s.code === subjectParam);
+const subjectCode = parseSubject(params.get("subject") ?? "", subjects);
+const subject = subjects.find((s) => s.code === subjectCode);
+const focus = courses.find((c) => c.id === params.get("course"));
 const levelParam = Number(params.get("level"));
 
-// levels to offer: those present in the subject or query results before the level filter
-const unlevelled = filterCourses(courses, subjects, { q, subject: subject?.code });
-const levels = levelsIn(unlevelled);
+// levels to offer: those present before the level filter is applied
+const unlevelled = focus ? [focus] : filterCourses(courses, subjects, { q, subject: subject?.code });
+const levels = focus ? [] : levelsIn(unlevelled);
 const level = levels.includes(levelParam) ? levelParam : undefined;
 const results = level ? unlevelled.filter((c) => levelOf(c.code) === level) : unlevelled;
-const namedSubjects = subject ? [] : matchSubjects(subjects, q);
-const browsing = !subject && q.length < 2;
+const namedSubjects = subject || focus ? [] : matchSubjects(subjects, q);
+const browsing = !subject && !focus && q.length < 2;
 
-const added = new Set(planCourseIds(plan.id));
+const planIds = planCourseIds(plan.id);
+const inPlan = new Set(planIds);
+const prefs = listPrefs(plan.id);
 const savedCount = listSaved(plan.id).length;
+const activitiesOf = new Map<string, ReturnType<typeof groupOptions>>();
+for (const options of groupOptions(meetingsFor(results.map((c) => c.id)))) {
+  const id = options[0].courseId;
+  activitiesOf.set(id, [...(activitiesOf.get(id) ?? []), options]);
+}
+
 const base = `/plan/${plan.id}/search`;
 const here = `${Astro.url.pathname}${Astro.url.search}`;
-
 const link = (next: { q?: string; subject?: string; level?: number }) => {
   const out = new URLSearchParams();
   if (next.q) out.set("q", next.q);
@@ -36,12 +46,16 @@ const link = (next: { q?: string; subject?: string; level?: number }) => {
   const query = out.toString();
   return query ? `${base}?${query}` : base;
 };
-const heading = subject
-  ? `${subject.code} — ${subject.name}`
-  : q.length >= 2
-    ? `Results for “${q}”`
-    : "Browse by subject";
+const heading = focus
+  ? `${focus.code} ${focus.title}`
+  : subject
+    ? `${subject.code} — ${subject.name}`
+    : q.length >= 2
+      ? `Results for “${q}”`
+      : "Browse by subject";
 const letters = [...new Set(subjects.map((s) => s.code[0]))];
+// classes are open when there are few results, or for courses already in the plan
+const openClasses = (id: string) => results.length <= 3 || inPlan.has(id);
 ---
 
 <Layout
@@ -51,8 +65,8 @@ const letters = [...new Set(subjects.map((s) => s.code[0]))];
   <div class="page-head">
     <h1>Search courses</h1>
     <p class="hint">
-      Semester 2 2026 · {courses.length} courses in {subjects.length} subjects. Pick a subject, or type a code,
-      title or subject name.
+      Semester 2 2026 · {courses.length} courses in {subjects.length} subjects. Type a code, title or subject,
+      or pick a subject.
     </p>
   </div>
 
@@ -65,16 +79,18 @@ const letters = [...new Set(subjects.map((s) => s.code[0]))];
         </div>
         <div class="field">
           <label for="subject">Subject</label>
-          <select id="subject" name="subject" onchange="this.form.requestSubmit()">
-            <option value="">All subjects</option>
-            {
-              subjects.map((s) => (
-                <option value={s.code} selected={s.code === subject?.code}>
-                  {s.code} — {s.name}
-                </option>
-              ))
-            }
-          </select>
+          <input
+            id="subject"
+            name="subject"
+            list="subject-list"
+            value={subject ? `${subject.code} — ${subject.name}` : ""}
+            placeholder="Type to filter: comp, law…"
+            autocomplete="off"
+            onchange="this.form.requestSubmit()"
+          />
+          <datalist id="subject-list">
+            {subjects.map((s) => <option value={`${s.code} — ${s.name}`} />)}
+          </datalist>
         </div>
         {level && <input type="hidden" name="level" value={String(level)} />}
         <button class="primary">Search</button>
@@ -112,77 +128,70 @@ const letters = [...new Set(subjects.map((s) => s.code[0]))];
         </div>
       </section>
     ) : (
-      <section class="card results-card" aria-labelledby="results-heading">
-        <div class="sched-head">
+      <section class="results-card" aria-labelledby="results-heading">
+        <div class="results-head">
           <div>
             <h2 id="results-heading">{heading}</h2>
             <p class="hint">
-              {results.length} {results.length === 1 ? "course" : "courses"}
+              {focus
+                ? "One course"
+                : `${results.length} ${results.length === 1 ? "course" : "courses"}`}
               {subject?.school && ` · ${subject.school}`}
             </p>
           </div>
           <a class="btn" href={base}>All subjects</a>
         </div>
-        <div class="card-body">
-          {levels.length > 1 && (
-            <nav aria-label="Level" class="chips">
-              <a href={link({ q, subject: subject?.code })} aria-current={!level ? "true" : undefined}>
-                All levels
-              </a>
-              {levels.map((l) => (
-                <a href={link({ q, subject: subject?.code, level: l })} aria-current={l === level ? "true" : undefined}>
-                  {l}-level
+
+        {namedSubjects.length > 0 && (
+          <ul class="subjects subject-hits" aria-label="Matching subjects">
+            {namedSubjects.map((s) => (
+              <li>
+                <a href={link({ subject: s.code })}>
+                  <strong>{s.code}</strong> <span>{s.name}</span>
                 </a>
-              ))}
-            </nav>
-          )}
-          {namedSubjects.length > 0 && (
-            <p class="hint">
-              Subjects matching “{q}”:{" "}
-              {namedSubjects.map((s, i) => (
-                <>
-                  {i > 0 && ", "}
-                  <a href={link({ subject: s.code })}>
-                    {s.code} {s.name}
-                  </a>
-                </>
-              ))}
-            </p>
-          )}
-          {results.length === 0 ? (
-            <p class="empty">No Semester 2 courses match. Try a subject from the list, or fewer letters.</p>
-          ) : (
-            <ul class="results course-results">
-              {results.map((c) => (
-                <li>
-                  <span class="name">
-                    <strong>{c.code}</strong>
-                    <small>
-                      {c.title}
-                      {!subject && ` · ${subjectOf(c.code)}`}
-                    </small>
-                  </span>
-                  {added.has(c.id) ? (
-                    <span class="added">✓ Added</span>
-                  ) : (
-                    <form method="post" action={`/api/plans/${plan.id}/courses`}>
-                      <input type="hidden" name="courseId" value={c.id} />
-                      <input type="hidden" name="action" value="add" />
-                      <input type="hidden" name="back" value={here} />
-                      <button class="small" aria-label={`Add ${c.code}`}>Add</button>
-                    </form>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+                <small>{s.count} courses →</small>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {levels.length > 1 && (
+          <nav aria-label="Level" class="chips">
+            <a href={link({ q, subject: subject?.code })} aria-current={!level ? "true" : undefined}>
+              All levels
+            </a>
+            {levels.map((l) => (
+              <a href={link({ q, subject: subject?.code, level: l })} aria-current={l === level ? "true" : undefined}>
+                {l}-level
+              </a>
+            ))}
+          </nav>
+        )}
+
+        {results.length === 0 ? (
+          <p class="empty card">No Semester 2 courses match. Try a subject from the list, or fewer letters.</p>
+        ) : (
+          <div class="course-cards">
+            {results.map((c) => (
+              <CourseCard
+                course={c}
+                info={courseInfo(c.code)}
+                activities={activitiesOf.get(c.id) ?? []}
+                inPlan={inPlan.has(c.id)}
+                prefs={prefs.filter((p) => p.courseId === c.id)}
+                planId={plan.id}
+                back={here}
+                open={openClasses(c.id)}
+              />
+            ))}
+          </div>
+        )}
       </section>
     )
   }
 
   <p class="hint">
-    {added.size} {added.size === 1 ? "course" : "courses"} in your plan ·{" "}
+    {inPlan.size} {inPlan.size === 1 ? "course" : "courses"} in your plan ·{" "}
     <a href={`/plan/${plan.id}`}>See your schedules →</a>
   </p>
 </Layout>

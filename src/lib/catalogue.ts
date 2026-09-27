@@ -1,4 +1,5 @@
 import { asc, eq, inArray } from "drizzle-orm";
+import courseDetails from "../../data/courses-2026.json";
 import subjectNames from "../../data/subjects-2026.json";
 import { type Subject, subjectOf } from "./course-search";
 import { db } from "./db";
@@ -6,6 +7,12 @@ import type { Meeting, Selection } from "./generate";
 import { courses, meetings } from "./schema";
 
 export type Course = typeof courses.$inferSelect;
+// from Programs and Courses (scripts/fetch-course-info.ts), keyed by code
+export type CourseInfo = { description: string; conveners: string[]; units: string };
+
+export function courseInfo(code: string): CourseInfo | undefined {
+  return (courseDetails as Record<string, CourseInfo>)[code];
+}
 
 const meetingColumns = {
   courseId: meetings.courseId,

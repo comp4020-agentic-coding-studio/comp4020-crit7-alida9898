@@ -8,9 +8,13 @@ export function clampPage(raw: string | null, total: number): number {
 }
 
 // What the schedule panel says when there's nothing to draw — always a reason.
-export function emptyMessage(courseCount: number, result: GenerateResult): string {
+// `narrowed` holds the "COURSE Activity"s the student has marked classes in.
+export function emptyMessage(courseCount: number, result: GenerateResult, narrowed = new Set<string>()): string {
   if (courseCount === 0) return "Add a course to see schedules.";
   if (result.capped) return "Too many combinations to search. Try removing a course.";
+  if (result.unschedulable && narrowed.has(result.unschedulable)) {
+    return `No clash-free schedule: the ${result.unschedulable} classes you kept all clash with a class you can't move. Widen your choice under “Choose classes”.`;
+  }
   if (result.unschedulable) {
     return `No clash-free schedule: every ${result.unschedulable} class clashes with a class you can't move.`;
   }

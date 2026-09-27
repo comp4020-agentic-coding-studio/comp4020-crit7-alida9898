@@ -1,5 +1,6 @@
+import axe from "axe-core";
 import { JSDOM } from "jsdom";
-import { describe, expect, inject, it } from "vitest";
+import { beforeAll, describe, expect, inject, it } from "vitest";
 
 // The schedule builder's promises, checked against the running app. Tests in
 // this file run in order and share one plan.
@@ -203,4 +204,124 @@ describe("course search", () => {
   it("404s the search page of an unknown plan", async () => {
     expect((await page("/plan/does-not-exist-000/search")).status).toBe(404);
   });
+});
+
+describe("course details and class choices", () => {
+  let planPath = "";
+  const total = async () => {
+    const { doc } = await page(planPath);
+    return Number(doc.querySelector("#schedule-heading")?.textContent?.match(/of (\d+)/)?.[1] ?? 0);
+  };
+  const classes = (fields: Record<string, string>) =>
+    post(api(planPath, "classes"), { courseId: "COMP2100_S2", activity: "ComA", back: planPath, ...fields });
+
+  it("shows what a course is, who runs it and where to read more", async () => {
+    const res = await post("/api/plans", {});
+    planPath = res.headers.get("location") ?? "";
+    const { doc } = await page(`${planPath}/search?q=COMP1110`);
+    const card = doc.querySelector("#course-COMP1110_S2");
+    expect(card?.textContent).toMatch(/programming/i);
+    expect(card?.textContent).toMatch(/convener/i);
+    expect(card?.querySelector('a[href="https://programsandcourses.anu.edu.au/2026/course/COMP1110"]')).toBeTruthy();
+  });
+
+  it("lists a course's classes grouped by activity, with times", async () => {
+    const { doc } = await page(`${planPath}/search?course=COMP2100_S2`);
+    const card = doc.querySelector("#course-COMP2100_S2");
+    expect(card?.textContent).toContain("Computer lab A");
+    expect(card?.textContent).toMatch(/\d\d:\d\d–\d\d:\d\d/);
+    expect(card?.querySelector('button[aria-label="Only COMP2100 ComA/03"]')).toBeTruthy();
+    expect(card?.querySelector('button[aria-label="Exclude COMP2100 ComA/03"]')).toBeTruthy();
+  });
+
+  it("combines every class by default", async () => {
+    await post(api(planPath, "courses"), { courseId: "COMP2100_S2", action: "add" });
+    expect(await total()).toBe(7);
+  });
+
+  it("drops an excluded class from the combinations", async () => {
+    const res = await classes({ occurrence: "01", mode: "exclude" });
+    expect(res.status).toBe(303);
+    expect(res.headers.get("location")).toBe(planPath);
+    expect(await total()).toBe(6);
+  });
+
+  it("keeps only the chosen class when told to", async () => {
+    await classes({ occurrence: "03", mode: "only" });
+    expect(await total()).toBe(1);
+    const { doc } = await page(planPath);
+    const selection = doc.querySelector<HTMLInputElement>('input[name="selection"]')?.value ?? "";
+    expect(JSON.parse(selection)).toContainEqual({ courseId: "COMP2100_S2", activity: "ComA", occurrence: "03" });
+  });
+
+  it("shows the choices on the plan and can reset them", async () => {
+    const { doc } = await page(planPath);
+    expect(doc.querySelector(".course-list")?.textContent).toContain("ComA");
+    await classes({ occurrence: "03", mode: "clear" });
+    await classes({ occurrence: "01", mode: "clear" });
+    expect(await total()).toBe(7);
+  });
+
+  it("says which activity has nothing left when every class is excluded", async () => {
+    for (const occurrence of ["01", "02", "03", "04", "05", "06", "07"]) await classes({ occurrence, mode: "exclude" });
+    const { doc } = await page(planPath);
+    expect(doc.body.textContent).toContain("You've excluded every COMP2100 ComA class");
+  });
+
+  it("adds the course when a class is chosen from search", async () => {
+    await post(api(planPath, "classes"), {
+      courseId: "COMP1110_S2",
+      activity: "LecA",
+      occurrence: "01",
+      mode: "only",
+      back: planPath,
+    });
+    const { doc } = await page(planPath);
+    expect(doc.querySelector('button[aria-label="Remove COMP1110"]')).toBeTruthy();
+  });
+
+  it("rejects a class that isn't in the timetable, or an unknown mode", async () => {
+    expect((await classes({ occurrence: "99", mode: "only" })).status).toBe(400);
+    expect((await classes({ occurrence: "01", mode: "maybe" })).status).toBe(400);
+  });
+});
+
+// The invariants' axe floor, for the pages that need a plan to exist (so
+// can't be listed in routes.ts): same rules, same jsdom limits.
+describe("accessibility of plan pages", () => {
+  let planPath = "";
+  const violations = async (path: string) => {
+    const url = new URL(path, baseUrl).href;
+    const dom = new JSDOM(await (await fetch(url)).text(), { url, runScripts: "outside-only", pretendToBeVisual: true });
+    const window = dom.window as unknown as { eval: (source: string) => void; axe: typeof axe };
+    window.eval(axe.source);
+    const results = await window.axe.run(dom.window.document, {
+      rules: { "color-contrast": { enabled: false }, "link-in-text-block": { enabled: false } },
+    });
+    return results.violations.map(({ id, help, nodes }) => `${id}: ${help} (${nodes.map((n) => n.target.join(" ")).join("; ")})`);
+  };
+
+  let savedHref = "";
+  beforeAll(async () => {
+    const res = await post("/api/plans", {});
+    planPath = res.headers.get("location") ?? "";
+    await post(api(planPath, "courses"), { courseId: "COMP2100_S2", action: "add" });
+    await post(api(planPath, "classes"), { courseId: "COMP2100_S2", activity: "ComA", occurrence: "02", mode: "exclude" });
+    const selection = (await page(planPath)).doc.querySelector<HTMLInputElement>('input[name="selection"]')?.value ?? "";
+    await post(api(planPath, "saved"), { selection });
+    savedHref = (await page(planPath)).doc.querySelector(`a[href^="${planPath}/saved/"]`)?.getAttribute("href") ?? "";
+  });
+
+  for (const [name, path] of [
+    ["the planner", () => planPath],
+    ["the subject directory", () => `${planPath}/search`],
+    ["search results", () => `${planPath}/search?q=comp`],
+    ["a subject at one level", () => `${planPath}/search?subject=COMP&level=2000`],
+    ["one course with its classes", () => `${planPath}/search?course=COMP2100_S2`],
+    ["a saved schedule", () => savedHref],
+  ] as const) {
+    it(`has no axe violations on ${name}`, { timeout: 20_000 }, async () => {
+      expect(await violations(path())).toEqual([]);
+    });
+  }
 });

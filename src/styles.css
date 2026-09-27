@@ -596,15 +596,6 @@ aside {
 
 /* --- course search --- */
 
-select {
-  max-width: 100%;
-  padding: 0.45rem 0.6rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.5rem;
-  background: #fff;
-  font: inherit;
-}
-
 .finder {
   display: flex;
   flex-wrap: wrap;
@@ -628,8 +619,9 @@ select {
   font-size: 0.85rem;
 }
 
-.field select {
+.field input[list] {
   width: 20rem;
+  max-width: 100%;
 }
 
 .results-card {
@@ -703,6 +695,8 @@ select {
 }
 
 .subjects small {
+  flex: none;
+  white-space: nowrap;
   padding: 0 0.45rem;
   border-radius: 999px;
   background: var(--bg);
@@ -747,4 +741,202 @@ select {
 .browse .btn {
   width: 100%;
   text-align: center;
+}
+
+/* --- course cards --- */
+
+.results-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.results-head h2 {
+  font-size: 1.15rem;
+}
+
+.subject-hits {
+  margin-bottom: 1rem;
+}
+
+.subject-hits li {
+  background: #fff;
+}
+
+.course-cards {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.course-card {
+  padding: 1rem 1.1rem;
+}
+
+.course-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.course-head h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.course-head h3 strong {
+  margin-right: 0.35rem;
+  color: var(--accent);
+}
+
+.course-head form {
+  margin: 0;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.desc {
+  margin: 0.6rem 0 0;
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+.desc summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.desc summary::-webkit-details-marker {
+  display: none;
+}
+
+.desc summary span {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.desc[open] summary {
+  display: none;
+}
+
+.desc p {
+  margin: 0;
+}
+
+.classes {
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.6rem;
+}
+
+.classes > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.classes > .hint {
+  margin: 0.4rem 0 0.2rem;
+}
+
+.activity h4 {
+  margin: 0.8rem 0 0.3rem;
+  font-size: 0.85rem;
+}
+
+.activity ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.class-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  margin-bottom: 0.3rem;
+  font-size: 0.85rem;
+}
+
+.class-row.only {
+  border-color: #a5b4fc;
+  background: var(--accent-tint);
+}
+
+.class-row.exclude,
+.class-row.left-out {
+  background: var(--bg);
+  color: #94a3b8;
+}
+
+.class-row.exclude .times {
+  text-decoration: line-through;
+}
+
+.occ {
+  min-width: 1.6rem;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.times {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 12rem;
+}
+
+.times small {
+  color: var(--muted);
+}
+
+.badge {
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.badge.only {
+  background: var(--accent);
+  color: #fff;
+}
+
+.badge.exclude,
+.badge.left-out {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.class-actions {
+  display: flex;
+  gap: 0.3rem;
+  margin: 0;
+}
+
+button.subtle {
+  color: var(--muted);
+}
+
+.course-list .pref {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.course-list .choose {
+  font-size: 0.8rem;
 }

@@ -28,6 +28,13 @@ describe("emptyMessage", () => {
     );
   });
 
+  it("points at your class choices when they're what leaves no room", () => {
+    const result = { ...none, unschedulable: "COMP2100 ComA" };
+    expect(emptyMessage(2, result, new Set(["COMP2100 ComA"]))).toBe(
+      "No clash-free schedule: the COMP2100 ComA classes you kept all clash with a class you can't move. Widen your choice under “Choose classes”.",
+    );
+  });
+
   it("explains a search that ran out of budget", () => {
     expect(emptyMessage(6, { ...none, capped: true })).toBe(
       "Too many combinations to search. Try removing a course.",

@@ -22,6 +22,13 @@
       "when": 1790488976140,
       "tag": "0002_lame_loki",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1790512192640,
+      "tag": "0003_simple_mindworm",
+      "breakpoints": true
     }
   ]
 }

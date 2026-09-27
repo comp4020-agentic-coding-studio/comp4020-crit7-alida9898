@@ -2,7 +2,8 @@ import { randomBytes } from "node:crypto";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { db } from "./db";
 import type { Selection } from "./generate";
-import { planCourses, plans, savedSchedules } from "./schema";
+import type { ClassPref } from "./prefs";
+import { classPrefs, planCourses, plans, savedSchedules } from "./schema";
 
 export type Plan = typeof plans.$inferSelect;
 export type SavedSchedule = { id: number; selection: Selection; createdAt: string };
@@ -44,9 +45,13 @@ export function addCourse(planId: string, courseId: string): void {
   db.insert(planCourses).values({ planId, courseId }).onConflictDoNothing().run();
 }
 
+// removing a course also forgets its class marks
 export function removeCourse(planId: string, courseId: string): void {
   db.delete(planCourses)
     .where(and(eq(planCourses.planId, planId), eq(planCourses.courseId, courseId)))
+    .run();
+  db.delete(classPrefs)
+    .where(and(eq(classPrefs.planId, planId), eq(classPrefs.courseId, courseId)))
     .run();
 }
 
@@ -81,4 +86,46 @@ export function getSaved(planId: string, id: number): SavedSchedule | undefined 
     .where(and(eq(savedSchedules.planId, planId), eq(savedSchedules.id, id)))
     .get();
   return row && toSaved(row);
+}
+
+export function listPrefs(planId: string): ClassPref[] {
+  return db
+    .select({
+      courseId: classPrefs.courseId,
+      activity: classPrefs.activity,
+      occurrence: classPrefs.occurrence,
+      mode: classPrefs.mode,
+    })
+    .from(classPrefs)
+    .where(eq(classPrefs.planId, planId))
+    .orderBy(asc(classPrefs.courseId), asc(classPrefs.activity), asc(classPrefs.occurrence))
+    .all();
+}
+
+// Mark one class "only" or "exclude", or clear its mark.
+export function setPref(planId: string, target: Omit<ClassPref, "mode">, mode: ClassPref["mode"] | "clear"): void {
+  const where = and(
+    eq(classPrefs.planId, planId),
+    eq(classPrefs.courseId, target.courseId),
+    eq(classPrefs.activity, target.activity),
+    eq(classPrefs.occurrence, target.occurrence),
+  );
+  if (mode === "clear") {
+    db.delete(classPrefs).where(where).run();
+    return;
+  }
+  db.insert(classPrefs)
+    .values({ planId, ...target, mode })
+    .onConflictDoUpdate({
+      target: [classPrefs.planId, classPrefs.courseId, classPrefs.activity, classPrefs.occurrence],
+      set: { mode },
+    })
+    .run();
+}
+
+// Where a form may send the browser back to: only this plan's own pages,
+// never somewhere a forged `back` field names.
+export function backTo(planId: string, back: string): string | undefined {
+  const home = `/plan/${planId}`;
+  return back === home || back.startsWith(`${home}/search`) || back.startsWith(`${home}?`) ? back : undefined;
 }

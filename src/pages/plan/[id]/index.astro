@@ -4,7 +4,8 @@ import WeekGrid from "../../../components/WeekGrid.astro";
 import { getCourses, meetingsFor } from "../../../lib/catalogue";
 import { courseCode, generate, toSelection } from "../../../lib/generate";
 import { clampPage, emptyMessage } from "../../../lib/plan-view";
-import { getPlan, listSaved, PLAN_COOKIE, planCookieOptions, planCourseIds } from "../../../lib/plans";
+import { getPlan, listPrefs, listSaved, PLAN_COOKIE, planCookieOptions, planCourseIds } from "../../../lib/plans";
+import { applyPrefs } from "../../../lib/prefs";
 
 const plan = getPlan(Astro.params.id ?? "");
 if (!plan) return Astro.rewrite("/404");
@@ -14,7 +15,11 @@ Astro.cookies.set(PLAN_COOKIE, plan.id, planCookieOptions);
 const ids = planCourseIds(plan.id);
 const added = getCourses(ids);
 const colours = new Map(ids.map((id, i) => [id, i % 8]));
-const result = generate(meetingsFor(ids));
+const prefs = listPrefs(plan.id);
+const pool = applyPrefs(meetingsFor(ids), prefs);
+const narrowed = new Set(prefs.map((p) => `${courseCode(p.courseId)} ${p.activity}`));
+// an activity with every class excluded can't be attended: no schedule works
+const result = pool.emptied.length > 0 ? generate([]) : generate(pool.meetings);
 const total = result.schedules.length;
 const n = clampPage(Astro.url.searchParams.get("n"), total);
 const schedule = result.schedules[n - 1];
@@ -22,6 +27,18 @@ const saved = listSaved(plan.id);
 const coursesAction = `/api/plans/${plan.id}/courses`;
 
 const pageLink = (k: number) => `?n=${k}`;
+// "ComA: only 03 · not 01, 02" for a course's marks, grouped by activity
+const prefSummary = (courseId: string) => {
+  const byActivity = new Map<string, { only: string[]; exclude: string[] }>();
+  for (const p of prefs.filter((x) => x.courseId === courseId)) {
+    const entry = byActivity.get(p.activity) ?? { only: [], exclude: [] };
+    entry[p.mode].push(p.occurrence);
+    byActivity.set(p.activity, entry);
+  }
+  return [...byActivity].map(([activity, { only, exclude }]) =>
+    only.length ? `${activity}: only ${only.join(", ")}` : `${activity}: not ${exclude.join(", ")}`,
+  );
+};
 const savedCodes = (selection: { courseId: string }[]) =>
   [...new Set(selection.map((s) => courseCode(s.courseId)))].join(", ");
 ---
@@ -49,6 +66,12 @@ const savedCodes = (selection: { courseId: string }[]) =>
                     <span class="name">
                       <strong>{c.code}</strong>
                       <small>{c.title}</small>
+                      {prefSummary(c.id).map((line) => (
+                        <small class="pref">{line}</small>
+                      ))}
+                      <a class="choose" href={`/plan/${plan.id}/search?course=${c.id}`}>
+                        Choose classes
+                      </a>
                     </span>
                     <form method="post" action={coursesAction}>
                       <input type="hidden" name="courseId" value={c.id} />
@@ -124,7 +147,11 @@ const savedCodes = (selection: { courseId: string }[]) =>
               <h2 id="schedule-heading">Schedules</h2>
             </div>
             <div class="card-body">
-              <p class="empty">{emptyMessage(ids.length, result)}</p>
+              <p class="empty">
+                {pool.emptied.length > 0
+                  ? `You've excluded every ${pool.emptied[0]} class — undo one under “Choose classes”.`
+                  : emptyMessage(ids.length, result, narrowed)}
+              </p>
             </div>
           </>
         )

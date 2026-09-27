@@ -72,3 +72,19 @@ export const savedSchedules = sqliteTable("saved_schedules", {
     .notNull()
     .default(sql`(datetime('now'))`),
 });
+
+// A plan's "only this class" / "not this class" marks (src/lib/prefs.ts).
+// Like plan_courses, no foreign key into the catalogue: marks survive a reseed.
+export const classPrefs = sqliteTable(
+  "class_prefs",
+  {
+    planId: text("plan_id")
+      .notNull()
+      .references(() => plans.id, { onDelete: "cascade" }),
+    courseId: text("course_id").notNull(),
+    activity: text().notNull(),
+    occurrence: text().notNull(),
+    mode: text({ enum: ["only", "exclude"] }).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.planId, t.courseId, t.activity, t.occurrence] })],
+);

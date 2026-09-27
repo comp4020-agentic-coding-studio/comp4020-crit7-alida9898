@@ -27,7 +27,8 @@ const savedCount = listSaved(plan.id).length;
       <a href={`/plan/${plan.id}`}>Back to your plan</a>
     </p>
   </div>
-  <section class="card" aria-label="Saved schedule">
+  <section class="card" aria-labelledby="week-heading">
+    <h2 id="week-heading" class="card-title">Timetable</h2>
     <div class="card-body">
       {
         schedule.length < saved.selection.length && (
