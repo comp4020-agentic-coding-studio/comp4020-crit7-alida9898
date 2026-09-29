@@ -318,6 +318,18 @@ describe("plan sidebar", () => {
     expect(form?.getAttribute("action")).toBe(`${planPath}/search`);
   });
 
+  it("hides the sidebar's quick search on the search page itself, where it would duplicate the main one", async () => {
+    // booleans, not raw elements: jsdom's opaque-origin `page()` docs throw
+    // "localStorage is not available for opaque origins" if an <input> is
+    // handed to `expect()` directly (some vitest/pretty-format DOM-element
+    // inspection touches window.localStorage) — a jsdom/tooling quirk with
+    // no bearing on real browsers, sidestepped by coercing to boolean first.
+    for (const path of [planPath, savedHref]) {
+      expect(!!sidebar((await page(path)).doc)?.querySelector("#side-q"), path).toBeTruthy();
+    }
+    expect(!!sidebar((await page(`${planPath}/search`)).doc)?.querySelector("#side-q")).toBeFalsy();
+  });
+
   it("removing a course from the sidebar returns to the same page", async () => {
     const back = `${planPath}/search?subject=MATH`;
     const res = await post(api(planPath, "courses"), { courseId: "COMP2100_S2", action: "remove", back });
@@ -363,4 +375,28 @@ describe("accessibility of plan pages", () => {
       expect(await violations(path())).toEqual([]);
     });
   }
+
+  it("enhances the Subject field into an accessible combobox", async () => {
+    // jsdom only executes parsed <script> tags under runScripts: "dangerously"
+    // ("outside-only" just enables window.eval, used above for axe) — safe
+    // here since this is our own server's script, not third-party content.
+    const url = new URL(`${planPath}/search`, baseUrl).href;
+    const dom = new JSDOM(await (await fetch(url)).text(), { url, runScripts: "dangerously", pretendToBeVisual: true });
+    const doc = dom.window.document;
+    const input = doc.querySelector("#subject");
+    expect(input?.getAttribute("role")).toBe("combobox");
+    expect(input?.getAttribute("aria-expanded")).toBe("false");
+    const listboxId = input?.getAttribute("aria-controls") ?? "";
+    const listbox = doc.getElementById(listboxId);
+    expect(listbox?.getAttribute("role")).toBe("listbox");
+    const optionCount = doc.querySelectorAll("#subject-list option").length;
+    expect(optionCount).toBeGreaterThan(0);
+    expect(listbox?.querySelectorAll('[role="option"]').length).toBe(optionCount);
+  });
+
+  it("still has a working native fallback for the Subject field without JS", async () => {
+    const { doc } = await page(`${planPath}/search`);
+    expect(doc.querySelector('input#subject[list="subject-list"]')).toBeTruthy();
+    expect(doc.querySelectorAll("datalist#subject-list option").length).toBeGreaterThan(0);
+  });
 });

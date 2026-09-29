@@ -732,6 +732,7 @@ input {
   flex-direction: column;
   gap: 0.3rem;
   min-width: 0;
+  position: relative;
 }
 
 .field.grow {
@@ -743,9 +744,37 @@ input {
   font-size: var(--text-sm);
 }
 
-.field input[list] {
+#subject {
   width: 20rem;
   max-width: 100%;
+}
+
+.combobox-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  margin: 0.3rem 0 0;
+  padding: 0.3rem;
+  list-style: none;
+  max-height: 16rem;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgb(15 23 42 / 0.1);
+}
+
+.combobox-list li {
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.combobox-list li:hover,
+.combobox-list li.is-active {
+  background: var(--accent-tint);
 }
 
 .results-card {

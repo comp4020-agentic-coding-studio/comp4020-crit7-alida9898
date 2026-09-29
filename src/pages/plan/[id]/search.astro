@@ -74,7 +74,7 @@ const openClasses = (id: string) => results.length <= 3 || inPlan.has(id);
       <form method="get" role="search" class="finder">
         <div class="field grow">
           <label for="q">Code, title or subject</label>
-          <input id="q" name="q" value={q} placeholder="COMP, COMP2100, computing…" />
+          <input id="q" name="q" value={q} placeholder="COMP, COMP2100, computing…" autocomplete="off" />
         </div>
         <div class="field">
           <label for="subject">Subject</label>
@@ -96,6 +96,111 @@ const openClasses = (id: string) => results.length <= 3 || inPlan.has(id);
       </form>
     </div>
   </section>
+
+  <script is:inline>
+    const input = document.getElementById("subject");
+    const datalist = document.getElementById("subject-list");
+    const field = input?.closest(".field");
+    if (input instanceof HTMLInputElement && datalist instanceof HTMLDataListElement && field) {
+      const values = [...datalist.options].map((o) => o.value);
+
+      const listbox = document.createElement("ul");
+      listbox.id = "subject-listbox";
+      listbox.className = "combobox-list";
+      listbox.setAttribute("role", "listbox");
+      listbox.hidden = true;
+      const items = values.map((value, i) => {
+        const li = document.createElement("li");
+        li.id = `subject-option-${i}`;
+        li.setAttribute("role", "option");
+        li.dataset.value = value;
+        li.textContent = value;
+        listbox.append(li);
+        return li;
+      });
+      input.after(listbox);
+
+      input.removeAttribute("list");
+      input.setAttribute("role", "combobox");
+      input.setAttribute("aria-autocomplete", "list");
+      input.setAttribute("aria-expanded", "false");
+      input.setAttribute("aria-controls", listbox.id);
+
+      let active = -1;
+      const visible = () => items.filter((li) => !li.hidden);
+
+      const close = () => {
+        listbox.hidden = true;
+        input.setAttribute("aria-expanded", "false");
+        input.removeAttribute("aria-activedescendant");
+        active = -1;
+      };
+
+      const setActive = (index) => {
+        const shown = visible();
+        for (const li of shown) li.classList.remove("is-active");
+        active = index;
+        const li = shown.at(index);
+        if (li) {
+          li.classList.add("is-active");
+          input.setAttribute("aria-activedescendant", li.id);
+          li.scrollIntoView({ block: "nearest" });
+        } else {
+          input.removeAttribute("aria-activedescendant");
+        }
+      };
+
+      const filter = () => {
+        const q = input.value.trim().toLowerCase();
+        for (const li of items) li.hidden = q.length > 0 && !(li.textContent ?? "").toLowerCase().includes(q);
+      };
+
+      const open = () => {
+        filter();
+        if (visible().length === 0) return close();
+        listbox.hidden = false;
+        input.setAttribute("aria-expanded", "true");
+      };
+
+      const select = (li) => {
+        input.value = li.dataset.value ?? "";
+        close();
+        input.form?.requestSubmit();
+      };
+
+      input.addEventListener("input", open);
+      input.addEventListener("focus", open);
+
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          event.preventDefault();
+          if (listbox.hidden) return open();
+          const shown = visible();
+          if (shown.length === 0) return;
+          const step = event.key === "ArrowDown" ? 1 : -1;
+          setActive((active + step + shown.length) % shown.length);
+        } else if (event.key === "Enter") {
+          const li = !listbox.hidden && active >= 0 ? visible().at(active) : undefined;
+          if (li) {
+            event.preventDefault();
+            select(li);
+          }
+        } else if (event.key === "Escape") {
+          close();
+        }
+      });
+
+      listbox.addEventListener("mousedown", (event) => event.preventDefault());
+      listbox.addEventListener("click", (event) => {
+        const li = event.target.closest("[role='option']");
+        if (li instanceof HTMLLIElement) select(li);
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!field.contains(event.target)) close();
+      });
+    }
+  </script>
 
   {
     browsing ? (

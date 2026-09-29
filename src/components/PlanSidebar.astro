@@ -29,10 +29,14 @@ const is = (yes: boolean) => (yes ? "page" : undefined);
 
 <aside class="sidebar" aria-label="Your plan">
   <div class="side-inner">
-  <form method="get" action={`${home}/search`} role="search" aria-label="Quick search" class="side-search">
-    <label for="side-q" class="side-label">Search courses</label>
-    <input id="side-q" name="q" placeholder="COMP2100, computing…" />
-  </form>
+  {
+    current !== "search" && (
+      <form method="get" action={`${home}/search`} role="search" aria-label="Quick search" class="side-search">
+        <label for="side-q" class="side-label">Search courses</label>
+        <input id="side-q" name="q" placeholder="COMP2100, computing…" autocomplete="off" />
+      </form>
+    )
+  }
 
   <nav aria-label="Plan sections" class="side-nav">
     <h2 class="side-label">Explore</h2>
