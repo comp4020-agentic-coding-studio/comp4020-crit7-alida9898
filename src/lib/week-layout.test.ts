@@ -50,4 +50,17 @@ describe("layoutWeek", () => {
   it("draws a meeting with unknown weeks as recurring", () => {
     expect(layoutWeek([option(0, 600, 660, "")]).blocks).toHaveLength(1);
   });
+
+  it("gives a later, non-overlapping meeting its own lane count instead of the day's peak", () => {
+    const layout = layoutWeek([
+      option(0, 600, 660, "31–36", "01"),
+      option(0, 610, 670, "31–36", "02"),
+      option(0, 620, 680, "31–36", "03"),
+      option(0, 900, 960, "31–36", "04"),
+    ]);
+    const late = layout.blocks.find((b) => b.startMin === 900)!;
+    expect([late.lane, late.lanes]).toEqual([0, 1]);
+    const morning = layout.blocks.filter((b) => b.startMin < 900);
+    expect(morning.every((b) => b.lanes === 3)).toBe(true);
+  });
 });

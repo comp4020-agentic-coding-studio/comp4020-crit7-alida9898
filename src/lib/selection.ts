@@ -14,6 +14,7 @@ export function parseSelection(raw: string): Selection | null {
   }
   if (!Array.isArray(value) || value.length === 0 || value.length > MAX_ITEMS) return null;
   const seen = new Set<string>();
+  const activityOccurrence = new Map<string, string>();
   const selection: Selection = [];
   for (const item of value) {
     const { courseId, activity, occurrence } = (item ?? {}) as Record<string, unknown>;
@@ -22,8 +23,12 @@ export function parseSelection(raw: string): Selection | null {
       return null;
     }
     const key = fields.join(" ");
+    const activityKey = `${courseId} ${activity}`;
+    const priorOccurrence = activityOccurrence.get(activityKey);
+    if (priorOccurrence !== undefined && priorOccurrence !== occurrence) return null;
     if (seen.has(key)) continue;
     seen.add(key);
+    activityOccurrence.set(activityKey, occurrence as string);
     selection.push({ courseId: courseId as string, activity: activity as string, occurrence: occurrence as string });
   }
   return selection;

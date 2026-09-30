@@ -12,6 +12,14 @@ describe("parseSelection", () => {
     expect(parseSelection(JSON.stringify([one, one]))).toEqual([one]);
   });
 
+  it("rejects two different occurrences of the same course activity", () => {
+    const raw = JSON.stringify([
+      { courseId: "A_S2", activity: "TutA", occurrence: "01" },
+      { courseId: "A_S2", activity: "TutA", occurrence: "02" },
+    ]);
+    expect(parseSelection(raw)).toBeNull();
+  });
+
   it.each([
     ["not json"],
     ["{}"],

@@ -41,15 +41,26 @@ export function layoutWeek(schedule: Schedule): WeekLayout {
     const today = recurring
       .filter((m) => m.day === day)
       .sort((a, b) => a.startMin - b.startMin || a.finishMin - b.finishMin);
-    const laneEnds: number[] = [];
     const placed: Block[] = [];
+    let laneEnds: number[] = [];
+    let cluster: Block[] = [];
+    let clusterEnd = -Infinity;
     for (const meeting of today) {
+      if (meeting.startMin >= clusterEnd) {
+        for (const block of cluster) block.lanes = laneEnds.length;
+        placed.push(...cluster);
+        cluster = [];
+        laneEnds = [];
+        clusterEnd = -Infinity;
+      }
       let lane = laneEnds.findIndex((end) => end <= meeting.startMin);
       if (lane === -1) lane = laneEnds.push(0) - 1;
       laneEnds[lane] = meeting.finishMin;
-      placed.push({ ...meeting, lane, lanes: 0 });
+      clusterEnd = Math.max(clusterEnd, meeting.finishMin);
+      cluster.push({ ...meeting, lane, lanes: 0 });
     }
-    for (const block of placed) block.lanes = laneEnds.length;
+    for (const block of cluster) block.lanes = laneEnds.length;
+    placed.push(...cluster);
     blocks.push(...placed);
   }
 
