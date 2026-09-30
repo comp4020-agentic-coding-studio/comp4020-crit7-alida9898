@@ -366,7 +366,9 @@ describe("accessibility of plan pages", () => {
   for (const [name, path] of [
     ["the planner", () => planPath],
     ["the subject directory", () => `${planPath}/search`],
-    ["search results", () => `${planPath}/search?q=comp`],
+    // a narrow query: "comp" matches ~every COMP course (~550 KB, ~9.6k
+    // elements) and axe-in-jsdom over that blew the 20 s timeout on CI
+    ["search results", () => `${planPath}/search?q=software`],
     ["a subject at one level", () => `${planPath}/search?subject=COMP&level=2000`],
     ["one course with its classes", () => `${planPath}/search?course=COMP2100_S2`],
     ["a saved schedule", () => savedHref],
